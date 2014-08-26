@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<schema name="geoclusterschema" version="1.5">
+  <types>
+    <fieldType name="string_primary" class="solr.StrField"
+	       indexed="true" stored="true" required="true"/>
+    <fieldType name="string_stored_indexed" class="solr.StrField"
+	       indexed="true" stored="true"/>
+    <fieldType name="geohash" class="solr.SpatialRecursivePrefixTreeFieldType"
+	       units="degrees" stored="true" indexed="true"/>
+
+ </types>
+
+
+ <fields>
+   <field name="id" type="string_primary" />
+   <field name="name" type="string_stored_indexed" />
+   <field name="location" type="geohash"  />
+   
+ </fields>
+
+ <uniqueKey>id</uniqueKey>
+
+
+</schema>

@@ -8,19 +8,23 @@ From a seperate shell
 
     $ cd solr-rocks/data
     $ curl http://localhost:8080/solr/update  -H 'Content-type:application/xml' \
-    --data-binary @US.xml
-    $ curl 'http://localhost:8080/solr/update?softCommit=true'
-or
-
-    $ curl http://localhost:8080/solr/update  -H 'Content-type:application/xml' \
     --data-binary @US_2000_entries.xml
     $ curl 'http://localhost:8080/solr/update?softCommit=true'
 
-For a smaller data set
+For a larger data set
 
-or make your own data set, for example:
+    $ curl -o US.zip http://download.geonames.org/export/dump/US.zip
+    $ unzip US.zip
+    # Note, this uncompresses to 250 megabytes!
+    $ curl http://localhost:8080/solr/update  -H 'Content-type:application/xml' \
+    --data-binary @US.xml
+    $ curl 'http://localhost:8080/solr/update?softCommit=true'
+
+or to make your own smaller data set:
 
     $ python to_xml.py 5000 > US_5000_entries.xml
+    $ curl http://localhost:8080/solr/update  -H 'Content-type:application/xml' \
+    --data-binary @US_5000_entries.xml
     $ curl 'http://localhost:8080/solr/update?softCommit=true'
 
 Make your queries to /solr/ as per solr docs

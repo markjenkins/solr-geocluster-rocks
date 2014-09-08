@@ -1,0 +1,123 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+  <head>
+    <!-- 
+    Leaflet is a JavaScript library for mobile-friendly interactive maps.
+    http://leafletjs.com/
+    It is Free Software.
+
+    The github repository is at https://github.com/Leaflet/Leaflet
+    -->
+    <link rel="stylesheet" href="leaflet-0.7.3/leaflet.css" />
+    <script src="leaflet-0.7.3/leaflet-src.js"></script>
+
+    <!--
+    jQuery is a fast, small, and feature-rich JavaScript library. It makes
+    things like HTML document traversal and manipulation, event handling,
+    animation, and Ajax much simpler with an easy-to-use API that works
+    across a multitude of browsers. With a combination of versatility and
+    extensibility, jQuery has changed the way that millions of people write
+    JavaScript.
+    http://jquery.com/
+    It is Free Software.
+
+    The github repository is at https://github.com/jquery/jquery
+    -->
+    <script src="jquery-2.1.1.js"></script>
+
+    <style>
+      #map { height: 100%; }
+      .cluster-marker { border-radius: 50%;
+      background: red;
+      }
+    </style>
+    <script>
+      // @license magnet:?xt=urn:btih:1f739d935676111cfff4b4693e3816e664797050&dn=gpl-3.0.txt GPL-v3-or-Later
+      // Copyright ParIT Worker Co-operative
+      // Author Mark Jenkins
+
+function show_continental_US_map(){
+    // create a map in the "map" div, set the view to a given place and zoom
+    var map = L.map('map', {
+			// this is the
+			// http://en.wikipedia.org/wiki/
+			// Geographic_center_of_the_contiguous_United_States
+			// near Lebanon, Kansas
+			center: [39.833333, -98.583333],
+
+			// experimentally I have determined that zoom level 4
+			// allows us to see all 48 states on a reasonable
+			// personal computer screen size, 5 does not
+			zoom: 4,
+
+			attributionControl: false,
+		    } );
+    var bounds = map.getBounds();
+    // these are the corners solr will need from us
+    var sw = bounds.getSouthWest();
+    var ne = bounds.getNorthEast();  
+
+    var tile_layer = L.tileLayer(
+	'http://{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',
+	{
+	    subdomains: ['otile1','otile2','otile3','otile4'],
+	    maxZoom: 18, // is this needed?
+	}
+    );
+    tile_layer.addTo(map);
+
+    //marker = L.marker([39.833333, -98.583333]).addTo(map);
+
+    var geojson_layer = L.geoJson(
+      false,
+      {pointToLayer: function (feature, latlng) {
+      if (feature.properties.clusterCount) {
+      var divIcon = L.divIcon(
+      {
+      html: feature.properties.clusterCount,
+      className: 'cluster-marker',
+      iconSize: 50,
+      } );
+      return L.marker(latlng, {icon: divIcon});
+      }
+      else {
+      return L.marker(latlng);
+      }
+      //return L.marker(latlng);
+      },
+
+      onEachFeature: function(feature, layer) {
+      // does this feature have a property named popupContent?
+      if (feature.properties && feature.properties.popupContent && ! feature.properties.clusterCount ){
+      layer.bindPopup(feature.properties.popupContent);
+
+      
+      }
+      }
+
+      }
+    );
+
+
+      $.getJSON("http://localhost:8080/geosearch",
+      function(data, status, jqXHR){
+      geojson_layer.addData(data);
+      geojson_layer.addTo(map);
+      }
+      );
+
+
+}
+
+      // @license-end
+    </script>
+
+  </head>
+
+  <body onload="show_continental_US_map();">
+
+    <div id='map'>
+    </div>
+
+  </body>
+</html>

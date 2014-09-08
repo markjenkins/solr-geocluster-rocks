@@ -17,15 +17,14 @@ public class WicketApplication extends WebApplication
 	}
 
   @Override
-  public Class<SearchPage> getHomePage()
+  public Class<GeoSearch> getHomePage()
 	{
-		return SearchPage.class;
+		return GeoSearch.class;
 	}
 
   @Override
   protected void init() {
     super.init();
 
-    mountPage("/geosearch", GeoSearch.class );
   }
 }

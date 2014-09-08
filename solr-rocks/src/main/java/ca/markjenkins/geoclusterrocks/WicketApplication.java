@@ -22,20 +22,6 @@ public class WicketApplication extends WebApplication
 	{
 	}
 
-  public static InputStream getStreamFromDataResource(String fname) throws IOException {
-    return new FileInputStream(new java.io.File(getDataDir(),"countries-poly.txt"));
-  }
-
-  /** Utility method used by several servlets in this app. */
-  public static File getDataDir() {
-    File data = new File("data");
-    String dir = System.getProperty("data.dir");
-    if(dir!=null) {
-      data = new File(dir);
-    }
-    return data;
-  }
-
   @Override
   public Class<SearchPage> getHomePage()
 	{

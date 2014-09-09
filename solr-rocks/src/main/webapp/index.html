@@ -12,6 +12,21 @@
     <script src="leaflet-0.7.3/leaflet-src.js"></script>
 
     <!--
+    Leaflet.markercluster is a Leaflet plugin that provides beautiful
+    animated marker clustering
+    https://github.com/Leaflet/Leaflet.markercluster
+    -->
+    <link rel="stylesheet"
+      href="Leaflet.markercluster-ac0b77b/MarkerCluster.css" />
+    <link rel="stylesheet"
+      href="Leaflet.markercluster-ac0b77b/MarkerCluster.Default.css" />
+    <!-- We're not going to use the clustering provided by this plugin, but
+    this CSS (above) and one excerpt (below) that makes our icons
+    -->
+    <script src="Leaflet.markercluster-ac0b77b/MarkerClusterGroup-excerpt.js">
+    </script>
+
+    <!--
     jQuery is a fast, small, and feature-rich JavaScript library. It makes
     things like HTML document traversal and manipulation, event handling,
     animation, and Ajax much simpler with an easy-to-use API that works
@@ -72,13 +87,8 @@ function show_continental_US_map(){
       false,
       {pointToLayer: function (feature, latlng) {
       if (feature.properties.clusterCount) {
-      var divIcon = L.divIcon(
-      {
-      html: feature.properties.clusterCount,
-      className: 'cluster-marker',
-      iconSize: 50,
-      } );
-      return L.marker(latlng, {icon: divIcon});
+      return L.marker(latlng,
+      {icon: cluster_icon_create(feature.properties.clusterCount) });
       }
       else {
       return L.marker(latlng);

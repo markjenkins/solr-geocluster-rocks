@@ -64,10 +64,16 @@ function show_continental_US_map(){
 
 			attributionControl: false,
 		    } );
+
+    var markerGroup = new L.LayerGroup();
+    markerGroup.addTo(map);
+
     var bounds = map.getBounds();
     // these are the corners solr will need from us
     var sw = bounds.getSouthWest();
     var ne = bounds.getNorthEast();  
+
+    map.getBounds().toBBoxString();
 
     var tile_layer = L.tileLayer(
 	'http://{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',
@@ -103,11 +109,13 @@ function show_continental_US_map(){
       }
     );
 
+    markerGroup.clearLayers();
+    markerGroup.addLayer(geojson_layer)
+
 
       $.getJSON("http://localhost:8080/geosearch",
       function(data, status, jqXHR){
       geojson_layer.addData(data);
-      geojson_layer.addTo(map);
       }
       );
 

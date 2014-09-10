@@ -3,6 +3,7 @@ package ca.markjenkins.geoclusterrocks;
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.request.handler.TextRequestHandler;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
+import org.apache.wicket.request.cycle.RequestCycle;
 
 import org.geojson.FeatureCollection;
 import org.geojson.Feature;
@@ -13,22 +14,64 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.solr.client.solrj.SolrServer;
+import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.impl.HttpSolrServer;
+import org.apache.solr.client.solrj.response.QueryResponse;
+import org.apache.solr.client.solrj.SolrQuery;
+
+import org.apache.solr.common.util.NamedList;
+import org.apache.solr.common.SolrDocumentList;
+import org.apache.solr.common.SolrDocument;
+
 public class GeoSearch extends WebPage {
+    static final SolrServer solr;
+    static {
+	solr = new HttpSolrServer( "http://localhost:8080/solr" );
+    }
 
     static Logger log_l4 = LoggerFactory.getLogger( GeoSearch.class );
 
     public GeoSearch(PageParameters pageParameters) {
+	RequestCycle cy = getRequestCycle();
+
+	QueryResponse rsp;
+	SolrQuery params = new SolrQuery();
+	String[] queryBounds =
+	    cy.getRequest().getQueryParameters().getParameterValue("bounds")
+	    .toString().split(",");
+	//southwest_lng,southwest_lat,northeast_lng,northeast_lat
+	params.setQuery("location:[" +
+			queryBounds[1] + "," +
+			queryBounds[0] +
+			" TO " + 
+			queryBounds[3] + "," +
+			queryBounds[2] + "]");
+	//			24.5210,-124.7625 TO 49.3845,-66.9326]");
+
+	try {
+	    rsp = solr.query( params );
+	}
+	catch (SolrServerException ex) {
+	    log_l4.warn( "unable to execute query", ex );
+	    return;
+	}
 
 	FeatureCollection fc = new FeatureCollection();
-	Feature f = new Feature();
-	f.setProperty("clusterCount", 5);
-	f.setGeometry(new Point(-98.583333, 39.833333) );
-	fc.add(f);
 
-	Feature f2 = new Feature();
-	f2.setProperty("popupContent", "Coors Field" );
-	f2.setGeometry(new Point(-104.99404191970824, 39.756213909328125) );
-	fc.add(f2);
+	NamedList<Object> solr_response = rsp.getResponse();
+	for (SolrDocument doc:
+		 (SolrDocumentList) solr_response.get("response") ){
+	    Feature f = new Feature();
+	    f.setProperty("popupContent",
+			  (String) doc.getFirstValue("name") );
+	    String location = (String)doc.getFirstValue("location");
+	    String[] location_parts = location.split(", ");
+	    f.setGeometry(new Point(
+		Double.parseDouble(location_parts[1]),
+		Double.parseDouble(location_parts[0]) ) );
+	    fc.add(f);
+	}
 
 	String json_output = "{}";
 	try {
@@ -39,7 +82,9 @@ public class GeoSearch extends WebPage {
 	    log_l4.error("JsonProblem we would never expect", e);
 	}
 
-	getRequestCycle().scheduleRequestHandlerAfterCurrent
+	//System.out.println(cy.getRequest().getQueryParameters()
+	//		   .getParameterValue("bounds") );
+	cy.scheduleRequestHandlerAfterCurrent
 	    ( new TextRequestHandler("application/json", null, json_output ) );
     }
 }

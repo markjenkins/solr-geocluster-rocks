@@ -68,13 +68,6 @@ function show_continental_US_map(){
     var markerGroup = new L.LayerGroup();
     markerGroup.addTo(map);
 
-    var bounds = map.getBounds();
-    // these are the corners solr will need from us
-    var sw = bounds.getSouthWest();
-    var ne = bounds.getNorthEast();  
-
-    map.getBounds().toBBoxString();
-
     var tile_layer = L.tileLayer(
 	'http://{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',
 	{
@@ -118,7 +111,8 @@ function show_continental_US_map(){
       markerGroup.addLayer(geojson_layer)
 
 
-      $.getJSON("http://localhost:8080/geosearch",
+      $.getJSON("http://localhost:8080/geosearch?bounds=" +
+      map.getBounds().toBBoxString(),
       function(data, status, jqXHR){
       geojson_layer.addData(data);
       }

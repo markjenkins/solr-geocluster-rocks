@@ -108,7 +108,7 @@ function show_continental_US_map(){
 
     function display_map(){
       markerGroup.clearLayers();
-      markerGroup.addLayer(geojson_layer)
+      markerGroup.addLayer(geojson_layer);
 
 
       $.getJSON("http://localhost:8080/geosearch?bounds=" +

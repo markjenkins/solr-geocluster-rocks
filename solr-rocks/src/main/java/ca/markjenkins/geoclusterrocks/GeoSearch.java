@@ -40,14 +40,12 @@ public class GeoSearch extends WebPage {
 	String[] queryBounds =
 	    cy.getRequest().getQueryParameters().getParameterValue("bounds")
 	    .toString().split(",");
-	//southwest_lng,southwest_lat,northeast_lng,northeast_lat
 	params.setQuery("location:[" +
 			queryBounds[1] + "," +
 			queryBounds[0] +
 			" TO " + 
 			queryBounds[3] + "," +
 			queryBounds[2] + "]");
-	//			24.5210,-124.7625 TO 49.3845,-66.9326]");
 
 	try {
 	    rsp = solr.query( params );

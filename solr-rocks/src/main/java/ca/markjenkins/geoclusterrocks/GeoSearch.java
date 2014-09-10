@@ -46,6 +46,9 @@ public class GeoSearch extends WebPage {
 			" TO " + 
 			queryBounds[3] + "," +
 			queryBounds[2] + "]");
+	params.setFacet(true);
+	params.addFacetField("location");
+	params.setFacetLimit(200);
 
 	try {
 	    rsp = solr.query( params );
@@ -80,8 +83,6 @@ public class GeoSearch extends WebPage {
 	    log_l4.error("JsonProblem we would never expect", e);
 	}
 
-	//System.out.println(cy.getRequest().getQueryParameters()
-	//		   .getParameterValue("bounds") );
 	cy.scheduleRequestHandlerAfterCurrent
 	    ( new TextRequestHandler("application/json", null, json_output ) );
     }

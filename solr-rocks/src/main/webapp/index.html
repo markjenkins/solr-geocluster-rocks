@@ -84,9 +84,8 @@ function show_continental_US_map(){
     );
     tile_layer.addTo(map);
 
-    var geojson_layer = L.geoJson(
-      false,
-      {pointToLayer: function (feature, latlng) {
+    var geojson_layer_options = {
+      pointToLayer: function (feature, latlng) {
       if (feature.properties.clusterCount) {
       return L.marker(latlng,
       {icon: cluster_icon_create(feature.properties.clusterCount) });
@@ -106,10 +105,17 @@ function show_continental_US_map(){
       }
 
       }
+
+
+    var geojson_layer = L.geoJson(
+      false,
+      geojson_layer_options
     );
 
-    markerGroup.clearLayers();
-    markerGroup.addLayer(geojson_layer)
+
+    function display_map(){
+      markerGroup.clearLayers();
+      markerGroup.addLayer(geojson_layer)
 
 
       $.getJSON("http://localhost:8080/geosearch",
@@ -117,8 +123,16 @@ function show_continental_US_map(){
       geojson_layer.addData(data);
       }
       );
+    }
 
+    function handle_map_move_end(e){
+      if (!map._popup) {
+        display_map();
+      }
+    }
 
+    map.on('moveend', handle_map_move_end);
+    display_map();
 }
 
       // @license-end

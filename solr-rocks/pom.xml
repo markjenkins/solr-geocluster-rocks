@@ -96,6 +96,12 @@
       <artifactId>geojson-jackson</artifactId>
       <version>1.2</version>
     </dependency>
+
+    <dependency>
+      <groupId>com.github.davidmoten</groupId>
+      <artifactId>geo</artifactId>
+      <version>0.6.8</version>
+    </dependency>
   </dependencies>
   
   

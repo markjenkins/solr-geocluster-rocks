@@ -100,13 +100,12 @@ function show_continental_US_map(){
       }
 
 
-    var geojson_layer = L.geoJson(
+    function display_map(){
+      var geojson_layer = L.geoJson(
       false,
       geojson_layer_options
-    );
+      );
 
-
-    function display_map(){
       markerGroup.clearLayers();
       markerGroup.addLayer(geojson_layer);
 
@@ -135,7 +134,6 @@ function show_continental_US_map(){
   </head>
 
   <body onload="show_continental_US_map();">
-
     <div id='map'>
     </div>
 

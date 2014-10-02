@@ -29,6 +29,8 @@ import com.github.davidmoten.geo.LatLong;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.SortedMap;
 
 
 public class GeoSearch extends WebPage {
@@ -55,6 +57,7 @@ public class GeoSearch extends WebPage {
 			" TO " + 
 			top_right_lat + "," +
 			top_right_long + "]");
+	params.setRows(35);
 	params.setFacet(true);
 	params.addFacetField("location");
 	params.setFacetLimit(0);
@@ -65,7 +68,7 @@ public class GeoSearch extends WebPage {
 	     Double.parseDouble(bot_left_long), // topLeftLon
 	     Double.parseDouble(bot_left_lat), // bottomRightLat
 	     Double.parseDouble(top_right_long), // bottomRightLon
-	     100).getHashes();
+	     70).getHashes();
 	for (String geohash_prefix: prefix_hashes){
 	    String q_string = "{!prefix f=location}" + geohash_prefix;
 	    params.addFacetQuery(q_string);
@@ -99,20 +102,8 @@ public class GeoSearch extends WebPage {
 
 	NamedList<Object> solr_response = rsp.getResponse();
 
-	for (String facet_query: facet_queries){
-	    int count = (Integer)solr_response.findRecursive
-		("facet_counts", "facet_queries",
-		 "{!prefix f=location}" + facet_query );
-	    if ( count > 1 ){
-	    Feature f = new Feature();
-	    f.setProperty("clusterCount", count);
-	    LatLong lat_long = GeoHash.decodeHash(facet_query);
-	    f.setGeometry(new Point( lat_long.getLon(),
-				     lat_long.getLat()
-				     ) );
-	    fc.add(f);
-	    }
-	}
+	TreeMap<String, Feature> points_of_interest = 
+	    new TreeMap<String, Feature>();
 
 	for (SolrDocument doc: 
 		 (SolrDocumentList) solr_response.get("response") ){
@@ -121,10 +112,38 @@ public class GeoSearch extends WebPage {
 			  (String) doc.getFirstValue("name") );
 	    String location = (String)doc.getFirstValue("location");
 	    String[] location_parts = location.split(", ");
-	    f.setGeometry(new Point(
+	    Point p = new Point(
 		Double.parseDouble(location_parts[1]),
-		Double.parseDouble(location_parts[0]) ) );
+		Double.parseDouble(location_parts[0]) );
+	    f.setGeometry(p);
+	    points_of_interest.put
+		(GeoHash.encodeHash(p.getCoordinates().getLatitude(),
+				    p.getCoordinates().getLongitude() ),
+		 f
+		 );
+	}
+
+	for (String facet_query: facet_queries){
+	    int count = (Integer)solr_response.findRecursive
+		("facet_counts", "facet_queries",
+		 "{!prefix f=location}" + facet_query );
+
+	    SortedMap<String, Feature>  matching_points =
+		points_of_interest.subMap(facet_query, facet_query + "z");
+	    if (! matching_points.isEmpty() ){
+		for (Feature f: matching_points.values() ){
+		    fc.add(f);
+		}
+	    }
+	    else if ( count > 1 ){
+	    Feature f = new Feature();
+	    f.setProperty("clusterCount", count);
+	    LatLong lat_long = GeoHash.decodeHash(facet_query);
+	    f.setGeometry(new Point( lat_long.getLon(),
+				     lat_long.getLat()
+				     ) );
 	    fc.add(f);
+	    }
 	}
 
 	String json_output = "{}";

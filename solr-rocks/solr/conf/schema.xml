@@ -3,20 +3,27 @@
 <schema name="geoclusterschema" version="1.5">
   <types>
     <fieldType name="string_primary" class="solr.StrField"
-	       indexed="true" stored="true" required="true"/>
+	       indexed="true" stored="true" multiValued="false"
+	       required="true"/>
     <fieldType name="string_stored_indexed" class="solr.StrField"
-	       indexed="true" stored="true"/>
-    <fieldType name="geohash" class="solr.SpatialRecursivePrefixTreeFieldType"
-	       units="degrees" stored="true" indexed="true"/>
-
+	       indexed="true" stored="true" multiValued="false" />
+    <fieldType name="coord_tdouble" class="solr.TrieDoubleField"
+	       indexed="true" stored="false" multiValued="false"
+	       precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
+    <fieldType name="SRPTGeohash"
+	       class="solr.SpatialRecursivePrefixTreeFieldType"
+	       geo="true" prefixTree="geohash"
+	       units="degrees"
+	       stored="true" indexed="true" multiValued="false"
+	       />
  </types>
-
 
  <fields>
    <field name="id" type="string_primary" />
    <field name="name" type="string_stored_indexed" />
-   <field name="location" type="geohash"  />
-   
+   <field name="latitude" type="coord_tdouble" />
+   <field name="longitude" type="coord_tdouble" />
+   <field name="location" type="SRPTGeohash" />
  </fields>
 
  <uniqueKey>id</uniqueKey>

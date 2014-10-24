@@ -16,6 +16,10 @@
 	       units="degrees"
 	       stored="true" indexed="true" multiValued="false"
 	       />
+
+    <fieldtype name="geohash_string" class="solr.StrField"
+	       indexed="true" stored="true" multiValued="false"
+	       />
  </types>
 
  <fields>
@@ -24,6 +28,18 @@
    <field name="latitude" type="coord_tdouble" />
    <field name="longitude" type="coord_tdouble" />
    <field name="location" type="SRPTGeohash" />
+   <field name="geohash_1" type="geohash_string" />
+   <field name="geohash_2" type="geohash_string" />
+   <field name="geohash_3" type="geohash_string" />
+   <field name="geohash_4" type="geohash_string" />
+   <field name="geohash_5" type="geohash_string" />
+   <field name="geohash_6" type="geohash_string" />
+   <field name="geohash_7" type="geohash_string" />
+   <field name="geohash_8" type="geohash_string" />
+   <field name="geohash_9" type="geohash_string" />
+   <field name="geohash_10" type="geohash_string" />
+   <field name="geohash_11" type="geohash_string" />
+   <field name="geohash_12" type="geohash_string" />
  </fields>
 
  <uniqueKey>id</uniqueKey>

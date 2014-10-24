@@ -14,13 +14,15 @@ From a seperate shell
 For a larger data set
 
     $ curl -o US.zip http://download.geonames.org/export/dump/US.zip
-    $ unzip US.zip
     # Note, this uncompresses to 250 megabytes!
+    $ unzip US.zip
+    # And this creates a file that is 1.4GB
+    $ python to_xml.py > US.xml
     $ curl http://localhost:8080/solr/update  -H 'Content-type:application/xml' \
     --data-binary @US.xml
     $ curl 'http://localhost:8080/solr/update?softCommit=true'
 
-or to make your own smaller data set:
+or  make own smaller data set:
 
     $ python to_xml.py 5000 > US_5000_entries.xml
     $ curl http://localhost:8080/solr/update  -H 'Content-type:application/xml' \
@@ -28,3 +30,6 @@ or to make your own smaller data set:
     $ curl 'http://localhost:8080/solr/update?softCommit=true'
 
 Make your queries to /solr/ as per solr docs
+
+The to_xml.py program requires http://code.google.com/p/python-geohash/
+Tested with r239 from the subversion repository

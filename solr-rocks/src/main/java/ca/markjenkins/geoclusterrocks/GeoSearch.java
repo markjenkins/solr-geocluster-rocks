@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.SortedMap;
 import java.util.Map.Entry;
+import java.util.List;
 
 public class GeoSearch extends WebPage {
     static final SolrServer solr;
@@ -182,24 +183,20 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 	if (hash_len < 1)
 	    hash_len = 1;
 
-	// fortunately going from a bottom left to top right system to a
-	// top left to bottom right system only requires mental gymanstics
+	params.setParam(GroupParams.GROUP, true);
+	// this is silly, should take 32 to the power of hash_len
+	// or not.. that makes a huge number when hash_len is 12...
+	// perhaps there is some theoritical upper limit on the number
+	// or we just set 
 	Set<String> real_prefix_hashes = GeoHash.coverBoundingBox
 	    (Double.parseDouble(top_right_lat), // topLeftLat
 	     Double.parseDouble(bot_left_long), // topLeftLon
 	     Double.parseDouble(bot_left_lat), // bottomRightLat
 	     Double.parseDouble(top_right_long), // bottomRightLon
 	     hash_len).getHashes();
-
-	params.setParam(GroupParams.GROUP, true);
-	params.setRows(hash_len);
+	params.setRows(real_prefix_hashes.size());
 	params.setParam(GroupParams.GROUP_LIMIT, GROUP_LIMIT);
-
-	for (String geohash_prefix: real_prefix_hashes){
-	    params.add
-		(GroupParams.GROUP_QUERY,
-		 "{!prefix f=location}" + geohash_prefix);
-	}
+	params.setParam(GroupParams.GROUP_FIELD, "geohash_" + hash_len);
 
 	try {
 	    rsp = solr.query( params );
@@ -239,42 +236,45 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 	FeatureCollection fc = new FeatureCollection();
 
 	NamedList<Object> solr_response = rsp.getResponse();
-
-	TreeMap<String, Feature> points_of_interest = 
-	    new TreeMap<String, Feature>();
+	NamedList<Object> groupedPart =
+	    (NamedList<Object>)solr_response.get("grouped");
 	
-	for (Entry<String, Object> group_response:
-		 (NamedList<Object>) solr_response.get("grouped") ){
+	// this loop is stupid, we know there is only one field we're
+	// grouping on...
+	for (Entry<String, Object> group_field_entry:
+		 groupedPart ){
+	    for (NamedList<Object> group:
+		     ( (NamedList<List<NamedList<Object>>>)
+		       group_field_entry.getValue() )
+		     .get("groups") ){
+		
+		SolrDocumentList docs =
+		    (SolrDocumentList)group.get("doclist");
 
-	    NamedList<Object> group_result =
-		(NamedList<Object>)group_response.getValue();
-	    SolrDocumentList docs =
-		(SolrDocumentList)group_result.get("doclist");
-
-	    if (docs.getNumFound() == 1 ){
-		SolrDocument doc = docs.get(0);
-		Feature f = new Feature();
-		f.setProperty("popupContent",
-			      (String) doc.getFirstValue("name") );
-		String location = (String)doc.getFirstValue("location");
-		String[] location_parts = location.split(", ");
-		Point p = new Point(
-				    Double.parseDouble(location_parts[1]),
-				    Double.parseDouble(location_parts[0]) );
-		f.setGeometry(p);
-		fc.add(f);
-	    }
-	    else if (docs.getNumFound() > 1) {
-		String group_query = group_response.getKey();
-		String hash_prefix =
-		    group_query.substring(group_query.lastIndexOf("}")+1);
-		Feature f = new Feature();
-		f.setProperty("clusterCount", docs.getNumFound() );
-		LatLong lat_long = GeoHash.decodeHash(hash_prefix);
-		f.setGeometry(new Point( lat_long.getLon(),
-					 lat_long.getLat()
-					 ) );
-		fc.add(f);
+		if (docs.getNumFound() == 1 ){
+		    SolrDocument doc = docs.get(0);
+		    Feature f = new Feature();
+		    f.setProperty("popupContent",
+				  (String) doc.getFirstValue("name") );
+		    String location = (String)doc.getFirstValue("location");
+		    String[] location_parts = location.split(", ");
+		    Point p = new Point(
+					Double.parseDouble(location_parts[1]),
+					Double.parseDouble(location_parts[0]) );
+		    f.setGeometry(p);
+		    fc.add(f);
+		}
+		else if (docs.getNumFound() > 1) {
+		    String hash_prefix = (String)group.get("groupValue");
+		    log_l4.info(hash_prefix);
+		    Feature f = new Feature();
+		    f.setProperty("clusterCount", docs.getNumFound() );
+		    LatLong lat_long = GeoHash.decodeHash(hash_prefix);
+		    f.setGeometry(new Point( lat_long.getLon(),
+					     lat_long.getLat()
+					     ) );
+		    fc.add(f);
+		}
 	    }
 	}
 	String json_output = "{}";

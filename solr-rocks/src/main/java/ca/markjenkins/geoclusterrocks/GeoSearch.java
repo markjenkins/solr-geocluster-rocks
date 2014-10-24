@@ -267,7 +267,6 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 		}
 		else if (docs.getNumFound() > 1) {
 		    String hash_prefix = (String)group.get("groupValue");
-		    log_l4.info(hash_prefix);
 		    Feature f = new Feature();
 		    f.setProperty("clusterCount", docs.getNumFound() );
 		    LatLong lat_long = GeoHash.decodeHash(hash_prefix);

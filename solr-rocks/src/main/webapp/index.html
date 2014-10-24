@@ -111,7 +111,7 @@ function show_continental_US_map(){
 
 
       $.getJSON("geosearch?bounds=" +
-      map.getBounds().toBBoxString(),
+      map.getBounds().toBBoxString() + "&zoom=" + map.getZoom(),
       function(data, status, jqXHR){
       geojson_layer.addData(data);
       }

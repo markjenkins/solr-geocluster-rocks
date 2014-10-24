@@ -219,6 +219,7 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 		  .getParameterValue("zoom").toString() );
 	}
 	catch (NumberFormatException e){
+	    log_l4.error(e.toString());
 	    zoom = 0;
 	}
 

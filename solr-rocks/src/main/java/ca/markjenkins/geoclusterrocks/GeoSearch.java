@@ -182,8 +182,6 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 	}
 
 	int hash_len = geohash_lengths_for_zooms[zoom];
-	if (hash_len < 1)
-	    hash_len = 1;
 	String hash_len_geohash_field = "geohash_" + hash_len;
 
 	params.addSort(SortClause.asc(hash_len_geohash_field));

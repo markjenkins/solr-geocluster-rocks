@@ -41,6 +41,25 @@ import java.util.Iterator;
 public class GeoSearch extends WebPage {
     static final int STATS_MEAN_FIELD = 6;
 
+    // we don't want the user to  request a huge piece of the earth with
+    // a strong zoom in or else it will be too many rows to handle and a
+    // kind of denial of service
+    // The number of rows we need to get back are the number of geohash
+    // prefixes we're looking at, so this doesn't depend on the number of
+    // items in the database directly, it depends on the number of unique
+    // geohashes with one item that the combination of zoom and bounds
+    // implies
+    //
+    // Ultimately this is a limit on the size of monitor someone can use to
+    // display a full map
+    // Imperically, we found that we didn't have results larger than
+    // 200,000 geohash prefixes with 1797x1562 resolution,
+    // and the full US data so we figured 300,000 would be a fine limit
+    //
+    // notably, search_api_solr that the Drupal Geocluster module /
+    // (our inspiration) has a limit of 1,000,000 ...
+    static final int NUM_ROWS_ALLOWED = 300000;
+
     static final SolrServer solr;
     static {
 	solr = new HttpSolrServer( "http://localhost:8080/solr" );
@@ -187,17 +206,7 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 	params.addSort(SortClause.asc(hash_len_geohash_field));
 
 	params.setParam(GroupParams.GROUP, true);
-	// this is silly, should take 32 to the power of hash_len
-	// or not.. that makes a huge number when hash_len is 12...
-	// perhaps there is some theoritical upper limit on the number
-	// or we just set 
-	Set<String> real_prefix_hashes = GeoHash.coverBoundingBox
-	    (Double.parseDouble(top_right_lat), // topLeftLat
-	     Double.parseDouble(bot_left_long), // topLeftLon
-	     Double.parseDouble(bot_left_lat), // bottomRightLat
-	     Double.parseDouble(top_right_long), // bottomRightLon
-	     hash_len).getHashes();
-	params.setRows(real_prefix_hashes.size());
+	params.setRows(NUM_ROWS_ALLOWED);
 	params.setParam(GroupParams.GROUP_LIMIT, GROUP_LIMIT);
 	params.setParam(GroupParams.GROUP_FIELD, hash_len_geohash_field);
 

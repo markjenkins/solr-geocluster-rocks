@@ -27,6 +27,7 @@ import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.SolrDocumentList;
 import org.apache.solr.common.SolrDocument;
 import org.apache.solr.common.params.GroupParams;
+import org.apache.solr.common.params.StatsParams;
 
 import com.github.davidmoten.geo.GeoHash;
 import com.github.davidmoten.geo.LatLong;
@@ -37,8 +38,12 @@ import java.util.TreeMap;
 import java.util.SortedMap;
 import java.util.Map.Entry;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Iterator;
 
 public class GeoSearch extends WebPage {
+    static final int STATS_MEAN_FIELD = 6;
+
     static final SolrServer solr;
     static {
 	solr = new HttpSolrServer( "http://localhost:8080/solr" );
@@ -149,7 +154,7 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
     }
 
     public static QueryResponse query_locations_in_solr
-	(String bounds, int zoom ){
+	(String bounds, int zoom, boolean stats_enabled){
 	QueryResponse rsp = null;
 	SolrQuery params = new SolrQuery();
 	String bot_left_long;
@@ -201,6 +206,12 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 	params.setParam(GroupParams.GROUP_LIMIT, GROUP_LIMIT);
 	params.setParam(GroupParams.GROUP_FIELD, hash_len_geohash_field);
 
+	if (stats_enabled){
+	    params.setParam(StatsParams.STATS, true);
+	    params.setParam(StatsParams.STATS_FIELD, "longitude", "latitude");
+	    params.setParam(StatsParams.STATS_FACET, hash_len_geohash_field);
+	}
+
 	try {
 	    rsp = solr.query( params );
 	}
@@ -210,6 +221,49 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 	}
 
 	return rsp;
+    }
+
+    static HashMap<String, Point> getClusterStatistics
+	(NamedList<Object> solr_response){
+
+	HashMap<String, Point> center_of_location =
+	    new HashMap<String, Point>();
+
+	// for each statistic, there is only one field (geohash_?)
+	// we have facetted on, hence the getVal(0)
+	NamedList<Object> stat_latitudes = (NamedList<Object>)
+	    ( (NamedList<Object> )
+	      solr_response.findRecursive("stats", "stats_fields",
+					  "latitude", "facets") ).getVal(0);
+	NamedList<Object> stat_longitudes = (NamedList<Object>)
+	    ( (NamedList<Object>)
+	      solr_response.findRecursive("stats", "stats_fields",
+					  "longitude", "facets")).getVal(0);
+
+	Iterator<Entry<String, Object>> lat_iter =
+	    stat_latitudes.iterator();
+	Iterator<Entry<String, Object>> long_iter =
+	    stat_longitudes.iterator();
+
+	while (lat_iter.hasNext() && long_iter.hasNext()){
+	    Entry<String, Object> lat_entry = lat_iter.next();
+	    Entry<String, Object> long_entry = long_iter.next();
+
+	    // this is the crucial assumption here, that our two
+	    // statistics are provided in the same hash order!
+	    assert( lat_entry.getKey() == long_entry.getKey() );
+
+	    NamedList<Double> long_stats =
+		(NamedList<Double>)long_entry.getValue();
+	    assert( long_stats.getName(STATS_MEAN_FIELD).equals("mean") );
+
+	    center_of_location.put( lat_entry.getKey(), new Point(
+		long_stats.getVal(STATS_MEAN_FIELD),
+		((NamedList<Double>)lat_entry.getValue())
+		.getVal(STATS_MEAN_FIELD)
+	    ) );
+	}
+	return center_of_location;
     }
 
     public GeoSearch(PageParameters pageParameters) {
@@ -226,10 +280,17 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 	    zoom = 0;
 	}
 
+	String stats =
+	    cy.getRequest().getQueryParameters()
+	    .getParameterValue("stats").toString();
+	boolean stats_enabled =
+	    stats == null || stats.equals("null") || stats.equals("true");
+
 	QueryResponse rsp = query_locations_in_solr(
 	    cy.getRequest().getQueryParameters().getParameterValue("bounds")
 	    .toString(),
-	    zoom );
+	    zoom,
+            stats_enabled );
 
 	if (rsp == null){
 	    cy.scheduleRequestHandlerAfterCurrent
@@ -240,6 +301,13 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 	FeatureCollection fc = new FeatureCollection();
 
 	NamedList<Object> solr_response = rsp.getResponse();
+
+	HashMap<String, Point> center_of_location = null;
+
+	if (stats_enabled){
+	    center_of_location = getClusterStatistics(solr_response);
+	}
+
 	NamedList<Object> groupedPart =
 	    (NamedList<Object>)solr_response.get("grouped");
 	
@@ -272,10 +340,18 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 		    String hash_prefix = (String)group.get("groupValue");
 		    Feature f = new Feature();
 		    f.setProperty("clusterCount", docs.getNumFound() );
-		    LatLong lat_long = GeoHash.decodeHash(hash_prefix);
-		    f.setGeometry(new Point( lat_long.getLon(),
-					     lat_long.getLat()
-					     ) );
+		    if (center_of_location == null ||
+			! center_of_location.containsKey(hash_prefix) ||
+			center_of_location.get(hash_prefix) == null
+			){
+			LatLong lat_long = GeoHash.decodeHash(hash_prefix);
+			f.setGeometry(new Point( lat_long.getLon(),
+						 lat_long.getLat()
+						 ) );
+		    }
+		    else
+			f.setGeometry(center_of_location.get(hash_prefix));
+
 		    fc.add(f);
 		}
 	    }

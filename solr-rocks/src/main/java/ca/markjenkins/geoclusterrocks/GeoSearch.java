@@ -21,6 +21,7 @@ import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrQuery.SortClause;
 
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.SolrDocumentList;
@@ -181,6 +182,9 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 	int hash_len = geohash_lengths_for_zooms[zoom];
 	if (hash_len < 1)
 	    hash_len = 1;
+	String hash_len_geohash_field = "geohash_" + hash_len;
+
+	params.addSort(SortClause.asc(hash_len_geohash_field));
 
 	params.setParam(GroupParams.GROUP, true);
 	// this is silly, should take 32 to the power of hash_len
@@ -195,7 +199,7 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 	     hash_len).getHashes();
 	params.setRows(real_prefix_hashes.size());
 	params.setParam(GroupParams.GROUP_LIMIT, GROUP_LIMIT);
-	params.setParam(GroupParams.GROUP_FIELD, "geohash_" + hash_len);
+	params.setParam(GroupParams.GROUP_FIELD, hash_len_geohash_field);
 
 	try {
 	    rsp = solr.query( params );

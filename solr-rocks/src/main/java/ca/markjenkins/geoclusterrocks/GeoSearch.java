@@ -303,52 +303,45 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 	    center_of_location = getClusterStatistics(solr_response);
 	}
 
-	NamedList<Object> groupedPart =
-	    (NamedList<Object>)solr_response.get("grouped");
-	
-	// this loop is stupid, we know there is only one field we're
-	// grouping on...
-	for (Entry<String, Object> group_field_entry:
-		 groupedPart ){
-	    for (NamedList<Object> group:
-		     ( (NamedList<List<NamedList<Object>>>)
-		       group_field_entry.getValue() )
-		     .get("groups") ){
-		
-		SolrDocumentList docs =
-		    (SolrDocumentList)group.get("doclist");
+	// we know there is only one field we're grouping on, hence getVal(0)
+	NamedList<Object> groups_f_field = (NamedList<Object>)
+	    ((NamedList<Object>)solr_response.get("grouped")).getVal(0);
 
-		if (docs.getNumFound() == 1 ){
-		    SolrDocument doc = docs.get(0);
-		    Feature f = new Feature();
-		    f.setProperty("popupContent",
-				  (String) doc.getFirstValue("name") );
-		    String location = (String)doc.getFirstValue("location");
-		    String[] location_parts = location.split(", ");
-		    Point p = new Point(
-					Double.parseDouble(location_parts[1]),
-					Double.parseDouble(location_parts[0]) );
-		    f.setGeometry(p);
-		    fc.add(f);
-		}
-		else if (docs.getNumFound() > 1) {
-		    String hash_prefix = (String)group.get("groupValue");
-		    Feature f = new Feature();
-		    f.setProperty("clusterCount", docs.getNumFound() );
-		    if (center_of_location == null ||
-			! center_of_location.containsKey(hash_prefix) ||
-			center_of_location.get(hash_prefix) == null
-			){
-			LatLong lat_long = GeoHash.decodeHash(hash_prefix);
-			f.setGeometry(new Point( lat_long.getLon(),
-						 lat_long.getLat()
-						 ) );
-		    }
-		    else
-			f.setGeometry(center_of_location.get(hash_prefix));
+	for (NamedList<Object> group:
+		 (List<NamedList<Object>>)groups_f_field.get("groups") ){
+	    SolrDocumentList docs =
+		(SolrDocumentList)group.get("doclist");
 
-		    fc.add(f);
+	    if (docs.getNumFound() == 1 ){
+		SolrDocument doc = docs.get(0);
+		Feature f = new Feature();
+		f.setProperty("popupContent",
+			      (String) doc.getFirstValue("name") );
+		String location = (String)doc.getFirstValue("location");
+		String[] location_parts = location.split(", ");
+		Point p = new Point(
+				    Double.parseDouble(location_parts[1]),
+				    Double.parseDouble(location_parts[0]) );
+		f.setGeometry(p);
+		fc.add(f);
+	    }
+	    else if (docs.getNumFound() > 1) {
+		String hash_prefix = (String)group.get("groupValue");
+		Feature f = new Feature();
+		f.setProperty("clusterCount", docs.getNumFound() );
+		if (center_of_location == null ||
+		    ! center_of_location.containsKey(hash_prefix) ||
+		    center_of_location.get(hash_prefix) == null
+		    ){
+		    LatLong lat_long = GeoHash.decodeHash(hash_prefix);
+		    f.setGeometry(new Point( lat_long.getLon(),
+					     lat_long.getLat()
+					     ) );
 		}
+		else
+		    f.setGeometry(center_of_location.get(hash_prefix));
+
+		fc.add(f);
 	    }
 	}
 	String json_output = "{}";

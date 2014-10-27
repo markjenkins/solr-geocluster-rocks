@@ -51,19 +51,19 @@
 function show_continental_US_map(){
     // create a map in the "map" div, set the view to a given place and zoom
     var map = L.map('map', {
-			// this is the
-			// http://en.wikipedia.org/wiki/
-			// Geographic_center_of_the_contiguous_United_States
-			// near Lebanon, Kansas
-			center: [39.833333, -98.583333],
-
-			// experimentally I have determined that zoom level 4
-			// allows us to see all 48 states on a reasonable
-			// personal computer screen size, 5 does not
-			zoom: 4,
-
 			attributionControl: false,
 		    } );
+    // fit within the boundaries of the 48 US states
+    // http://en.wikipedia.org/wiki/Extreme_points_of_the_United_States
+    // Southern point used is Western Dry Rocks, Florida
+    // Western point used is Umatilla Reef, Washinton
+    // Northern point used is Northwest Angle, Florida
+    // Eastern point used is Sail Rock, Maine
+    map.fitBounds( [
+      [24.446667, -124.785], // south-west
+      [49.384472, -66.947028] ], // north-east
+      {padding: [20, 20]}
+      );
 
     var markerGroup = new L.LayerGroup();
     markerGroup.addTo(map);

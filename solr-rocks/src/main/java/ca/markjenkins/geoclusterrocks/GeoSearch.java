@@ -54,13 +54,12 @@ public class GeoSearch extends WebPage {
     //maxResolution = GEOFIELD_KILOMETERS * 1000 / $tile_size;
     static final double MAX_RESOLUTION = 156.412 * 1000;
 
-    static final double[] resolutions;
-    // as the following illustrates, a "final" array isn't so final...
-    // in some situations this can be a security problem
+    static final int[] geohash_lengths_for_zooms;
     static {
-	resolutions = new double[ZOOMS];
+	geohash_lengths_for_zooms = new int[ZOOMS];
 	for( int zoom=0; zoom < ZOOMS; zoom++ ){
-	    resolutions[zoom] = MAX_RESOLUTION / Math.pow(2, zoom);
+	    geohash_lengths_for_zooms[zoom] =
+		lengthFromDistance(MAX_RESOLUTION / Math.pow(2, zoom) );
 	}
     }
 
@@ -179,7 +178,7 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 			    top_right_long + "]");
 	}
 
-	int hash_len = lengthFromDistance(resolutions[zoom]);
+	int hash_len = geohash_lengths_for_zooms[zoom];
 	if (hash_len < 1)
 	    hash_len = 1;
 

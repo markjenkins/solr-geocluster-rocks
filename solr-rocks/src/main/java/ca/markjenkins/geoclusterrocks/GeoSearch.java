@@ -32,10 +32,7 @@ import org.apache.solr.common.params.StatsParams;
 import com.github.davidmoten.geo.GeoHash;
 import com.github.davidmoten.geo.LatLong;
 
-import java.util.HashSet;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.SortedMap;
 import java.util.Map.Entry;
 import java.util.List;
 import java.util.HashMap;

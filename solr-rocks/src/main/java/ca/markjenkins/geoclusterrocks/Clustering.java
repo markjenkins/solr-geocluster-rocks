@@ -1,9 +1,21 @@
 package ca.markjenkins.geoclusterrocks;
 
+import ca.markjenkins.geoclusterrocks.GeoSearch;
+
 import com.spatial4j.core.io.GeohashUtils;
+import org.apache.lucene.util.SloppyMath;
+
+import org.geojson.Feature;
 import org.geojson.Point;
 import org.geojson.LngLatAlt;
-import org.apache.lucene.util.SloppyMath;
+
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.HashSet;
+import java.util.Iterator;
+
+import com.github.davidmoten.geo.GeoHash;
+import com.github.davidmoten.geo.Direction;
 
 public class Clustering {
     // this is pretty much strait lifted from
@@ -120,4 +132,131 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeoclusterHelper.inc
 	return distance_pixels(a, b, resolution)
 	    <= GEOCLUSTER_DEFAULT_DISTANCE;
     }
+    /* Derived from
+     * http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
+     */
+    public static String[] getTopRightNeighbors(String geohash) {
+	// Return only top-right neighbors according to the structure of geohash.
+	String[] neighbors = new String[4];
+	String top = GeoHash.top(geohash);
+	neighbors[0] = GeoHash.left(top);
+	neighbors[1] = top;
+	neighbors[2] = GeoHash.right(top);
+	neighbors[3] = GeoHash.right(geohash);
+	return neighbors;
+    }
+
+    /* Derived from
+     * http://cgit.drupalcode.org/geocluster/tree/includes/GeoclusterHelper.inc
+     */
+    static Point getFactoredCenter
+	(Point p1, Point p2, long count1, long count2){
+	double lon =
+	    p1.getCoordinates().getLongitude()*count1 +
+	    p2.getCoordinates().getLongitude()*count2;
+	double lat =
+	    p1.getCoordinates().getLatitude()*count1 +
+	    p2.getCoordinates().getLatitude()*count2;
+	long totalFactor = count1+count2;
+	return
+	    new Point(lon / totalFactor, lat / totalFactor);
+    }
+
+    /**
+     * Cluster two given rows.
+     *
+     * Derived from addCluster() in
+     http://cgit.drupalcode.org/geocluster/tree/modules/geocluster_solr/plugins/algorithm/SolrGeohashGeoclusterAlgorithm.inc
+     *
+     */
+    static void addCluster
+	(Feature item, Feature other_item, String other_item_hash,
+	 Map<String, Feature> geohash_groups){
+
+	// this is one thing we're not doing, retaining any memory of
+	// what we've clustered together... might be useful to do a feature
+	// setProperty of a list of both ids and names at some point to
+	// allow browser side to break small valued clusters down by clicking
+	// (useful when things have same location)
+	// $result1['geocluster_ids'] .= ',' . $result2['geocluster_ids'];
+	Object otherItemClusterCount =
+	    other_item.getProperty(GeoSearch.CLUSTER_COUNT_FEATURE_PROPERTY);
+	long raise_count_by = 1;
+	if (otherItemClusterCount != null)
+	    raise_count_by = (Long) otherItemClusterCount;
+
+	Object itemClusterCount =
+	    item.getProperty(GeoSearch.CLUSTER_COUNT_FEATURE_PROPERTY);
+	long newItemCount = 1+raise_count_by;
+	if (itemClusterCount!=null)
+	    newItemCount = (Long)itemClusterCount+raise_count_by;
+	item.setProperty(GeoSearch.CLUSTER_COUNT_FEATURE_PROPERTY,
+			 newItemCount);
+
+	item.setGeometry( getFactoredCenter((Point) item.getGeometry(),
+					    (Point) other_item.getGeometry(),
+					    newItemCount, raise_count_by) );
+    }
+
+    /**
+     * Create final clusters by checking for overlapping neighbors.
+     *
+     * Derived from
+http://cgit.drupalcode.org/geocluster/tree/plugins/algorithm/GeohashGeoclusterAlgorithm.inc
+     */
+    static void clusterByNeighborCheck
+	(Map<String, Feature> geohash_groups, int zoom) {
+	
+	double resolution = resolutions[zoom];
+
+	// whoa, big assumption here, we're assuming because geohash_groups
+	// is actually a TreeMap or LinkedHashMap that we're getting keys in
+	// order here....
+	// otherwise we have to do some detecting and casting to work with
+	// both cases...
+	//
+	// Plus our performance is suffering for it, we're having to maintain
+	// a set of hashes already merged to ignore and them removeing them
+	// after instead of modifying the set while we work it over in one
+	// pass... surely the more deep apis of TreeMaps and LinkedHashMap
+	// would allow us to iterate and remove at the same time
+	HashSet<String> already_removed_hashes = new HashSet<String>();
+	for (String item_hash: geohash_groups.keySet() ){
+
+	    // ignore hash already "removed"
+	    if(already_removed_hashes.contains(item_hash))
+		continue;
+
+	    Feature item = geohash_groups.get(item_hash);
+	    Point geometry = (Point) item.getGeometry();
+	    
+	    // Check top right neighbor hashes for overlapping points.
+	    // Top-right is enough because by the way geohash is structured,
+	    // future geohashes are always top, topright or right
+	    String[] neighbours = getTopRightNeighbors(item_hash);
+	    String all_neighbours = "";
+	    String removed = "";
+	    for (int i=0; i<neighbours.length; i++){
+		String other_hash = neighbours[i];
+		if (already_removed_hashes.contains(other_hash))
+		    continue;
+		all_neighbours += " " + other_hash;
+		Feature other_item = geohash_groups.get(other_hash);
+		if (other_item != null){
+		    Point other_geometry = (Point) other_item.getGeometry();
+
+		    if (shouldCluster(geometry, other_geometry, resolution)) {
+			addCluster(item, other_item, other_hash,
+				   geohash_groups);
+			already_removed_hashes.add(other_hash);
+			removed += " " + other_hash;
+		    }
+		}
+	    }
+	}
+	// now we do the actual removing
+	for (String remove_hash: already_removed_hashes)
+	    geohash_groups.remove(remove_hash);
+    }
+
 }

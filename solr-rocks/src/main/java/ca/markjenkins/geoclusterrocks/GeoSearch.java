@@ -322,6 +322,8 @@ public class GeoSearch extends WebPage {
 	    applyClusterStatistics(solr_response, geohash_groups);
 	}
 
+	Clustering.clusterByNeighborCheck(geohash_groups, zoom);
+
 	FeatureCollection fc = new FeatureCollection();
 	for (Feature f: geohash_groups.values())
 	    fc.add(f);

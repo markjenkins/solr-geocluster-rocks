@@ -21,11 +21,19 @@ public class Clustering {
     // this is pretty much strait lifted from
     // http://cgit.drupalcode.org/geocluster/tree/includes/GeoclusterHelper.inc
     public static final int ZOOMS = 30+1;
-    // // Meters per pixel.
-    // $maxResolution = 156543.03390625;
-    //static final int TILE_SIZE = 256;
-    //maxResolution = GEOFIELD_KILOMETERS * 1000 / $tile_size;
-    public static final double MAX_RESOLUTION = 156.412 * 1000;
+    
+    public static final int PIXELS_PER_TILE = 256;
+
+    public static final double EARTH_DIAMETER = SloppyMath.earthDiameter(0.0);
+    public static final int METERS_PER_KM = 1000;
+
+    // this is the most meters per pixel, what you get when viewing with world
+    // with zoom=0
+    // circumference = 2*PI*r = PI * diameter
+    //
+    // http://wiki.openstreetmap.org/wiki/Zoom_levels
+    public static final double MAX_RESOLUTION =
+	Math.PI * EARTH_DIAMETER * METERS_PER_KM / PIXELS_PER_TILE;
 
     public static final double[] resolutions;
     public static final int[] geohash_lengths_for_zooms;
@@ -35,6 +43,8 @@ public class Clustering {
 	resolutions = new double[ZOOMS];
 	geohash_lengths_for_zooms = new int[ZOOMS];
 	for( int zoom=0; zoom < ZOOMS; zoom++ ){
+	    // when zoom is 0, 2 to the power of 0 = 1,
+	    // and this is MAX_RESOLUTION
 	    resolutions[zoom] = MAX_RESOLUTION / Math.pow(2, zoom);
 	    geohash_lengths_for_zooms[zoom] =
 		lengthFromDistance(resolutions[zoom]);
@@ -75,6 +85,7 @@ https://github.com/openlayers/openlayers/blob/master/lib/OpenLayers/Projection.j
 http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
      */
     public static int lengthFromDistance(double resolution) {
+	// this is the number of meters we'd like to keep our markers apart
 	double cluster_distance_meters =
 	    GEOCLUSTER_DEFAULT_DISTANCE * resolution;
 	double x = cluster_distance_meters;

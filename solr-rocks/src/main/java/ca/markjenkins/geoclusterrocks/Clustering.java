@@ -95,7 +95,7 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
 	int hashLen =
 	    GeohashUtils.lookupHashLenForWidthHeight(width_height[0],
 						     width_height[1] );
-	return hashLen +1;
+	return hashLen;
     }
 
     /**

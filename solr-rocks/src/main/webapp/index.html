@@ -101,19 +101,16 @@ function show_continental_US_map(){
 
 
     function display_map(){
+      $.getJSON("geosearch?bounds=" +
+      map.getBounds().toBBoxString() + "&zoom=" + map.getZoom(),
+      function(data, status, jqXHR){
       var geojson_layer = L.geoJson(
       false,
       geojson_layer_options
       );
-
+      geojson_layer.addData(data);
       markerGroup.clearLayers();
       markerGroup.addLayer(geojson_layer);
-
-
-      $.getJSON("geosearch?bounds=" +
-      map.getBounds().toBBoxString() + "&zoom=" + map.getZoom(),
-      function(data, status, jqXHR){
-      geojson_layer.addData(data);
       }
       );
     }

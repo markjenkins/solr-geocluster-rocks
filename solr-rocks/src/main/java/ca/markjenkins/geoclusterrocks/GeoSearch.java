@@ -46,7 +46,7 @@ public class GeoSearch extends WebPage {
     // maybe we can load both of these variables from a configuration some day?
     // 
     // Do we want to make Solr responsible for sorting the Geohash groups?
-    static final boolean SOLR_RESPONSIBLE_SORT = true;
+    static final boolean SOLR_RESPONSIBLE_SORT = false;
     // if so, we don't need to use a TreeMap to sort the info as it comes in
     // and we can used LinkedHashMap instead, which should perform better
     // (it will use more RAM)

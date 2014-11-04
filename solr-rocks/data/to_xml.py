@@ -8,7 +8,9 @@ from geohash import encode
 
 GEOHASH_ENCODE_LEVELS = 12
 
-with open('US.txt') as f:
+filename = 'US.txt' if len(argv) < 2 else argv[1]
+
+with open(filename) as f:
     print "<add>"
     for i, line in enumerate(f,1):
         line_splits = line.split('\t')
@@ -31,6 +33,6 @@ with open('US.txt') as f:
 
         print "</doc>"
 
-        if len(argv) > 1 and i >= int(argv[1]):
+        if len(argv) > 2 and i >= int(argv[2]):
             break
     print "</add>"

@@ -116,9 +116,10 @@ function show_continental_US_map(){
     }
 
     function handle_map_move_end(e){
-      if (!map._popup) {
-        display_map();
+      if (map._popup){
+      map._popup._source.closePopup();
       }
+      display_map();
     }
 
     map.on('moveend', handle_map_move_end);

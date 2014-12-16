@@ -95,8 +95,17 @@ function show_continental_US_map(){
 
       
       }
+      else {
+      layer.on('click', function(e) {
+      if (map._popup) {
+      map._popup._source.closePopup();
       }
-
+      // Zoom and pan to clicked item.
+      map.panTo(layer.getLatLng());
+      map.zoomIn();
+      });
+      } // else
+      }
       }
 
 

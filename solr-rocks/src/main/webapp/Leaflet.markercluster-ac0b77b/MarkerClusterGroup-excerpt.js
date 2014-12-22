@@ -7,8 +7,13 @@ function cluster_icon_create (cluster_count) {
 	c += 'small';
     } else if (cluster_count < 100) {
 	c += 'medium';
-    } else {
+    } else if (cluster_count < 1000) {
 	c += 'large';
+    }
+    else if (cluster_count < 10000) {
+        c += 'huge';
+    } else {
+        c += 'giant';
     }
     return new L.DivIcon({ html: '<div><span>' + cluster_count +
 			   '</span></div>',

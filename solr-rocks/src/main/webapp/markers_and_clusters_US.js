@@ -11,7 +11,7 @@ function show_continental_US_map(){
     // http://en.wikipedia.org/wiki/Extreme_points_of_the_United_States
     // Southern point used is Western Dry Rocks, Florida
     // Western point used is Umatilla Reef, Washinton
-    // Northern point used is Northwest Angle, Florida
+    // Northern point used is Northwest Angle, Minnesota
     // Eastern point used is Sail Rock, Maine
     map.fitBounds( [
 		       [24.446667, -124.785], // south-west

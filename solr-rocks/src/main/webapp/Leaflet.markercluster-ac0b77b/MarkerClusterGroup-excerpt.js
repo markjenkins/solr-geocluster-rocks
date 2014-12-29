@@ -7,10 +7,10 @@ function cluster_icon_create (cluster_count) {
 	c += 'small';
     } else if (cluster_count < 100) {
 	c += 'medium';
-    } else if (cluster_count < 1000) {
+    } else if (cluster_count < 200) {
 	c += 'large';
     }
-    else if (cluster_count < 10000) {
+    else if (cluster_count < 700) {
         c += 'huge';
     } else {
         c += 'giant';

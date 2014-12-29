@@ -252,6 +252,7 @@ public class GeoSearch extends WebPage {
 		SolrDocument doc = docs.get(0);
 		f.setProperty("popupContent",
 			      (String) doc.getFirstValue("name") );
+		f.setProperty("org_id", (String)doc.getFirstValue("org_id"));
 		String location = (String)doc.getFirstValue("location");
 		String[] location_parts = location.split(", ");
 		Point p = new Point(

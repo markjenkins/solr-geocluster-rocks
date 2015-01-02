@@ -64,7 +64,7 @@ function show_continental_US_map(){
 
 
     function display_map(){
-	$.getJSON("geosearch?bounds=" +
+	jQuery.getJSON("geosearch?bounds=" +
 		  map.getBounds().toBBoxString() + "&zoom=" + map.getZoom(),
 		  function(data, status, jqXHR){
 		      var geojson_layer = L.geoJson(

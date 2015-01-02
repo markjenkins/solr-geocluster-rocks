@@ -47,7 +47,11 @@ function show_continental_US_map(div_name){
 	    // does this feature have a property named popupContent?
 	    if (feature.properties && feature.properties.popupContent
 		&& ! feature.properties.clusterCount ){
-		    layer.bindPopup(feature.properties.popupContent);
+		    layer.bindPopup('<a href="/organizations/' +
+				    feature.properties.org_id +
+				   '/">' +
+				   feature.properties.popupContent +
+				   '</a>' );
 		}
 	    else {
 		layer.on('click', function(e) {

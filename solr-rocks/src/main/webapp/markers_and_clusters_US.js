@@ -2,9 +2,9 @@
 // Copyright ParIT Worker Co-operative
 // Author Mark Jenkins
 
-function show_continental_US_map(){
+function show_continental_US_map(div_name){
     // create a map in the "map" div, set the view to a given place and zoom
-    var map = L.map('map', {
+    var map = L.map(div_name, {
 			attributionControl: false,
 		    } );
     // fit within the boundaries of the 48 US states

@@ -41,6 +41,7 @@ import java.util.TreeMap;
 import java.util.Iterator;
 
 public class GeoSearch extends WebPage {
+    static final String POPUP_CONTENT_FEATURE_PROPERTY = "popupContent";
     static final String CLUSTER_COUNT_FEATURE_PROPERTY = "clusterCount";
 
     // maybe we can load both of these variables from a configuration some day?
@@ -250,7 +251,7 @@ public class GeoSearch extends WebPage {
 	    long docs_num_found = docs.getNumFound();
 	    if (docs_num_found == 1 ){
 		SolrDocument doc = docs.get(0);
-		f.setProperty("popupContent",
+		f.setProperty(POPUP_CONTENT_FEATURE_PROPERTY,
 			      (String) doc.getFirstValue("name") );
 		String location = (String)doc.getFirstValue("location");
 		String[] location_parts = location.split(", ");

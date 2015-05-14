@@ -204,6 +204,11 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeoclusterHelper.inc
 	item.setProperty(GeoSearch.CLUSTER_COUNT_FEATURE_PROPERTY,
 			 newItemCount);
 
+	if (item.getProperties().containsKey
+	    (GeoSearch.POPUP_CONTENT_FEATURE_PROPERTY) ){
+	    item.getProperties().remove
+		(GeoSearch.POPUP_CONTENT_FEATURE_PROPERTY);
+	}
 	item.setGeometry( getFactoredCenter((Point) item.getGeometry(),
 					    (Point) other_item.getGeometry(),
 					    newItemCount, raise_count_by) );

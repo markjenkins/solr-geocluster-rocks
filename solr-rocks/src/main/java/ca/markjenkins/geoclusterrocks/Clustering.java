@@ -1,6 +1,7 @@
 package ca.markjenkins.geoclusterrocks;
 
 import ca.markjenkins.geoclusterrocks.GeoSearch;
+import ca.markjenkins.geoclusterrocks.PointGroup;
 
 import com.spatial4j.core.io.GeohashUtils;
 import org.apache.lucene.util.SloppyMath;
@@ -157,63 +158,6 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeoclusterHelper.inc
 	return neighbors;
     }
 
-    /* Derived from
-     * http://cgit.drupalcode.org/geocluster/tree/includes/GeoclusterHelper.inc
-     */
-    static Point getFactoredCenter
-	(Point p1, Point p2, long count1, long count2){
-	double lon =
-	    p1.getCoordinates().getLongitude()*count1 +
-	    p2.getCoordinates().getLongitude()*count2;
-	double lat =
-	    p1.getCoordinates().getLatitude()*count1 +
-	    p2.getCoordinates().getLatitude()*count2;
-	long totalFactor = count1+count2;
-	return
-	    new Point(lon / totalFactor, lat / totalFactor);
-    }
-
-    /**
-     * Cluster two given rows.
-     *
-     * Derived from addCluster() in
-     http://cgit.drupalcode.org/geocluster/tree/modules/geocluster_solr/plugins/algorithm/SolrGeohashGeoclusterAlgorithm.inc
-     *
-     */
-    static void addCluster
-	(Feature item, Feature other_item, String other_item_hash,
-	 Map<String, Feature> geohash_groups){
-
-	// this is one thing we're not doing, retaining any memory of
-	// what we've clustered together... might be useful to do a feature
-	// setProperty of a list of both ids and names at some point to
-	// allow browser side to break small valued clusters down by clicking
-	// (useful when things have same location)
-	// $result1['geocluster_ids'] .= ',' . $result2['geocluster_ids'];
-	Object otherItemClusterCount =
-	    other_item.getProperty(GeoSearch.CLUSTER_COUNT_FEATURE_PROPERTY);
-	long raise_count_by = 1;
-	if (otherItemClusterCount != null)
-	    raise_count_by = (Long) otherItemClusterCount;
-
-	Object itemClusterCount =
-	    item.getProperty(GeoSearch.CLUSTER_COUNT_FEATURE_PROPERTY);
-	long newItemCount = 1+raise_count_by;
-	if (itemClusterCount!=null)
-	    newItemCount = (Long)itemClusterCount+raise_count_by;
-	item.setProperty(GeoSearch.CLUSTER_COUNT_FEATURE_PROPERTY,
-			 newItemCount);
-
-	if (item.getProperties().containsKey
-	    (GeoSearch.POPUP_CONTENT_FEATURE_PROPERTY) ){
-	    item.getProperties().remove
-		(GeoSearch.POPUP_CONTENT_FEATURE_PROPERTY);
-	}
-	item.setGeometry( getFactoredCenter((Point) item.getGeometry(),
-					    (Point) other_item.getGeometry(),
-					    newItemCount, raise_count_by) );
-    }
-
     /**
      * Create final clusters by checking for overlapping neighbors.
      *
@@ -221,7 +165,7 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeoclusterHelper.inc
 http://cgit.drupalcode.org/geocluster/tree/plugins/algorithm/GeohashGeoclusterAlgorithm.inc
      */
     static void clusterByNeighborCheck
-	(Map<String, Feature> geohash_groups, int zoom) {
+	(Map<String, PointGroup> geohash_groups, int zoom) {
 	
 	double resolution = resolutions[zoom];
 
@@ -243,7 +187,7 @@ http://cgit.drupalcode.org/geocluster/tree/plugins/algorithm/GeohashGeoclusterAl
 	    if(already_removed_hashes.contains(item_hash))
 		continue;
 
-	    Feature item = geohash_groups.get(item_hash);
+	    PointGroup item = geohash_groups.get(item_hash);
 	    Point geometry = (Point) item.getGeometry();
 	    
 	    // Check top right neighbor hashes for overlapping points.
@@ -257,13 +201,24 @@ http://cgit.drupalcode.org/geocluster/tree/plugins/algorithm/GeohashGeoclusterAl
 		if (already_removed_hashes.contains(other_hash))
 		    continue;
 		all_neighbours += " " + other_hash;
-		Feature other_item = geohash_groups.get(other_hash);
+		PointGroup other_item = geohash_groups.get(other_hash);
 		if (other_item != null){
 		    Point other_geometry = (Point) other_item.getGeometry();
 
 		    if (shouldCluster(geometry, other_geometry, resolution)) {
-			addCluster(item, other_item, other_hash,
-				   geohash_groups);
+			assert( null != item.getGeometry() );
+			if (item.cluster_collection()){
+			    assert( null !=
+				    item.get_cluster_feature().getGeometry() );
+			}
+			assert( null != other_item.getGeometry() );
+			item.mergeIn(other_item);
+			assert( null != item.getGeometry() );
+			if (item.cluster_collection()){
+			    assert( null !=
+				    item.get_cluster_feature().getGeometry() );
+			}
+
 			already_removed_hashes.add(other_hash);
 			removed += " " + other_hash;
 		    }

@@ -1,6 +1,7 @@
 package ca.markjenkins.geoclusterrocks;
 
 import ca.markjenkins.geoclusterrocks.Clustering;
+import ca.markjenkins.geoclusterrocks.PointGroup;
 
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.request.handler.TextRequestHandler;
@@ -39,10 +40,13 @@ import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.TreeMap;
 import java.util.Iterator;
+import java.util.ArrayList;
 
 public class GeoSearch extends WebPage {
     static final String POPUP_CONTENT_FEATURE_PROPERTY = "popupContent";
     static final String CLUSTER_COUNT_FEATURE_PROPERTY = "clusterCount";
+
+    static final int GROUP_SIZE_MAX_ZOOM = 80;
 
     // maybe we can load both of these variables from a configuration some day?
     // 
@@ -86,8 +90,6 @@ public class GeoSearch extends WebPage {
 	solr = new HttpSolrServer( "http://localhost:8080/solr" );
     }
 
-    static final String GROUP_LIMIT = "1";
-
     static Logger log_l4 = LoggerFactory.getLogger( GeoSearch.class );
 
     public static String restrictLatitude(String latitude){
@@ -127,7 +129,7 @@ public class GeoSearch extends WebPage {
     }
 
     public static QueryResponse query_locations_in_solr
-	(String bounds, int zoom, boolean stats_enabled){
+	(String bounds, int zoom, boolean stats_enabled, int group_threshold){
 	QueryResponse rsp = null;
 	SolrQuery params = new SolrQuery();
 	String bot_left_long;
@@ -165,7 +167,8 @@ public class GeoSearch extends WebPage {
 
 	params.setParam(GroupParams.GROUP, true);
 	params.setRows(NUM_ROWS_ALLOWED);
-	params.setParam(GroupParams.GROUP_LIMIT, GROUP_LIMIT);
+	params.setParam(GroupParams.GROUP_LIMIT,
+			String.valueOf(group_threshold) );
 	params.setParam(GroupParams.GROUP_FIELD, hash_len_geohash_field);
 
 	if (stats_enabled){
@@ -188,7 +191,7 @@ public class GeoSearch extends WebPage {
 
     static void applyClusterStatistics
 	(NamedList<Object> solr_response,
-	 Map<String, Feature> geohash_groups){
+	 Map<String, PointGroup> geohash_groups){
 
 	// for each statistic, there is only one field (geohash_?)
 	// we have facetted on, hence the getVal(0)
@@ -219,27 +222,29 @@ public class GeoSearch extends WebPage {
 	    assert( long_stats.getName(STATS_MEAN_FIELD).equals("mean") );
 
 	    String geohash_prefix = lat_entry.getKey();
+	    Point statistical_point = new Point
+		(long_stats.getVal(STATS_MEAN_FIELD),
+		 ((NamedList<Double>)lat_entry.getValue())
+		 .getVal(STATS_MEAN_FIELD) );
 	    if (geohash_groups.containsKey(geohash_prefix) ){
-		Feature f = geohash_groups.get(geohash_prefix);
-		if (f.getProperty(CLUSTER_COUNT_FEATURE_PROPERTY) != null){
-		    f.setGeometry
-			( new Point
-			  (long_stats.getVal(STATS_MEAN_FIELD),
-			   ((NamedList<Double>)lat_entry.getValue())
-			   .getVal(STATS_MEAN_FIELD) ) );
-		}
+		PointGroup pg = geohash_groups.get(geohash_prefix);
+		if (pg.cluster_collection())
+		    pg.get_cluster_feature().setGeometry(statistical_point);
+		else if (pg.grouped_points_collection())
+		    pg.center = statistical_point;
 	    }
 	
 	}
     }
 
-    static Map<String, Feature> load_in_sorted_geohash_groups
-	(NamedList<Object> groups_f_field, boolean stats_enabled){
-	Map<String, Feature> result = null;
+    static Map<String, PointGroup> load_in_sorted_geohash_groups
+	(NamedList<Object> groups_f_field, boolean stats_enabled,
+	 int max_group_size){
+	Map<String, PointGroup> result = null;
 	if (USE_TREE_OVER_LINKED_HASH)
-	    result = new TreeMap<String, Feature>();
+	    result = new TreeMap<String, PointGroup>();
 	else
-	    result = new LinkedHashMap<String, Feature>();
+	    result = new LinkedHashMap<String, PointGroup>();
 	
 	for (NamedList<Object> group:
 		 (List<NamedList<Object>>)groups_f_field.get("groups") ){
@@ -247,32 +252,11 @@ public class GeoSearch extends WebPage {
 		(SolrDocumentList)group.get("doclist");
 
 	    String hash_prefix = (String)group.get("groupValue");
-	    Feature f = new Feature();
-	    long docs_num_found = docs.getNumFound();
-	    if (docs_num_found == 1 ){
-		SolrDocument doc = docs.get(0);
-		f.setProperty(POPUP_CONTENT_FEATURE_PROPERTY,
-			      (String) doc.getFirstValue("name") );
-		String location = (String)doc.getFirstValue("location");
-		String[] location_parts = location.split(", ");
-		Point p = new Point(
-				    Double.parseDouble(location_parts[1]),
-				    Double.parseDouble(location_parts[0]) );
-		f.setGeometry(p);
-	    }
-	    else if (docs_num_found > 1) {
-		f.setProperty(CLUSTER_COUNT_FEATURE_PROPERTY,
-			      docs.getNumFound() );
-		if (!stats_enabled){
-		    LatLong lat_long = GeoHash.decodeHash(hash_prefix);
-		    f.setGeometry(new Point( lat_long.getLon(),
-					     lat_long.getLat()
-					     ) );
-		}
-	    }
-	    else
-		continue; // just ignore hash prefix with 0 documents, move on
-	    result.put(hash_prefix, f);
+	    PointGroup points = new PointGroup(docs, max_group_size,
+					       stats_enabled, hash_prefix,
+					       null);
+	    if (! points.empty() )
+ 		result.put(hash_prefix, points);
 	}
 
 	return result;
@@ -292,6 +276,10 @@ public class GeoSearch extends WebPage {
 	    zoom = 0;
 	}
 
+	int max_group_size = 1;
+	if (zoom>=18)
+	    max_group_size = GROUP_SIZE_MAX_ZOOM;
+
 	String stats =
 	    cy.getRequest().getQueryParameters()
 	    .getParameterValue("stats").toString();
@@ -302,7 +290,8 @@ public class GeoSearch extends WebPage {
 	    cy.getRequest().getQueryParameters().getParameterValue("bounds")
 	    .toString(),
 	    zoom,
-            stats_enabled );
+            stats_enabled,
+	    max_group_size);
 
 	if (rsp == null){
 	    cy.scheduleRequestHandlerAfterCurrent
@@ -313,25 +302,53 @@ public class GeoSearch extends WebPage {
 	NamedList<Object> solr_response = rsp.getResponse();
 
 	// we know there is only one field we're grouping on, hence getVal(0)
-	Map<String, Feature> geohash_groups =
+	Map<String, PointGroup> geohash_groups =
 	    load_in_sorted_geohash_groups
 	    (  (NamedList<Object>)
 	       ((NamedList<Object>)solr_response.get("grouped")).getVal(0),
-	       stats_enabled );
+	       stats_enabled,
+	       max_group_size);
 
 	if (stats_enabled){
 	    applyClusterStatistics(solr_response, geohash_groups);
 	}
 
+	/** delete me when done debugging **/
+	for (PointGroup pg: geohash_groups.values()){
+	    assert( null != pg.getGeometry() );
+	    if (pg.cluster_collection() )
+		assert( null != pg.get_cluster_feature().getGeometry()  );
+	}
+
 	Clustering.clusterByNeighborCheck(geohash_groups, zoom);
 
-	FeatureCollection fc = new FeatureCollection();
-	for (Feature f: geohash_groups.values())
-	    fc.add(f);
+	TreeMap output_tree = new TreeMap<String, FeatureCollection>();
+	FeatureCollection single_points_collection = new FeatureCollection();
+	ArrayList<FeatureCollection> grouped_points_collections = 
+	    new ArrayList<FeatureCollection>();
+	FeatureCollection clusters_collection = new FeatureCollection();
+	for (PointGroup pg: geohash_groups.values()){
+	    if (pg.single_point())
+		single_points_collection.add(pg.get_single_point());
+	    else if (pg.grouped_points_collection()){
+		FeatureCollection grouped_points_collection = 
+		    new FeatureCollection();
+		grouped_points_collections.add(grouped_points_collection);
+		for (Feature f: pg.get_points() )
+		    grouped_points_collection.add(f);
+	    }
+	    else if (pg.cluster_collection())
+		clusters_collection.add( pg.get_cluster_feature() );
+	    else
+		assert(false);
+	}
+	output_tree.put("single_points", single_points_collection);
+	output_tree.put("grouped_points", grouped_points_collections);
+	output_tree.put("clusters", clusters_collection);
 
 	String json_output = "{}";
 	try {
-	    json_output = new ObjectMapper().writeValueAsString(fc);
+	    json_output = new ObjectMapper().writeValueAsString(output_tree);
 	}
 	catch (JsonProcessingException e) {
 	    // we're forced to catch this, but I don't think we'll ever see it

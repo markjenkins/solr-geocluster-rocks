@@ -91,7 +91,7 @@ function show_continental_US_map(div_name){
 				      new_marker = L.marker(
 					  latlng,
 					  {icon: L.icon(
-					      {iconUrl:'spider_marker.png'} )
+					      {iconUrl:'/images/spider_marker.png'} )
 					   }
 					  );
 				      oms.addMarker(new_marker);

@@ -31,6 +31,8 @@ function show_continental_US_map(div_name){
     );
     tile_layer.addTo(map);
 
+    var spider_popup = new L.Popup();
+
     var geojson_layer_options = {
 	pointToLayer: function (feature, latlng) {
 	    if (feature.properties.clusterCount) {
@@ -75,9 +77,38 @@ function show_continental_US_map(div_name){
 			  false,
 			  geojson_layer_options
 		      );
-		      geojson_layer.addData(data);
+		      geojson_layer.addData(data['clusters']);
+		      geojson_layer.addData(data['single_points']);
 		      markerGroup.clearLayers();
 		      markerGroup.addLayer(geojson_layer);
+
+		      for(var i=0; i<=data['grouped_points'].length; i++){
+			  var oms = new OverlappingMarkerSpiderfier(
+			      map, {keepSpiderfied: true});
+			  var spidergeojson_layer = L.geoJson(
+			      false, {
+				  pointToLayer: function(feature, latlng){
+				      new_marker = L.marker(
+					  latlng,
+					  {icon: L.icon(
+					      {iconUrl:'spider_marker.png'} )
+					   }
+					  );
+				      oms.addMarker(new_marker);
+				      return new_marker;
+				  },
+			       	  onEachFeature: function(feature, layer){
+				      layer.bindPopup(
+					  feature.properties.popupContent);
+				  }
+			      }
+			  );
+
+			  spidergeojson_layer.addData(
+			      data['grouped_points'][i]);
+			  markerGroup.addLayer(spidergeojson_layer);
+		      }
+
 		  }
 		 );
     }

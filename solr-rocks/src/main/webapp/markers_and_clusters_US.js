@@ -82,7 +82,7 @@ function show_continental_US_map(div_name){
 		      markerGroup.clearLayers();
 		      markerGroup.addLayer(geojson_layer);
 
-		      for(var i=0; i<=data['grouped_points'].length; i++){
+		      for(var i=0; i<data['grouped_points'].length; i++){
 			  var oms = new OverlappingMarkerSpiderfier(
 			      map, {keepSpiderfied: true});
 			  var spidergeojson_layer = L.geoJson(

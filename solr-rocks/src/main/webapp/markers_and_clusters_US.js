@@ -2,10 +2,19 @@
 // Copyright ParIT Worker Co-operative
 // Author Mark Jenkins
 
+mapbox_accessToken = 'pk.eyJ1Ijoic29saWRhcml0eWVjb25vbXkiLCJhIjoiMTExNWFkZDMyNTJhYWJiMGMwYzEzMzAyNTMyNWI4YjgifQ.p5zIXgZV-CaHRksQ_MiMPw'
+
 function show_continental_US_map(div_name){
+    var atrib = 
+	"<a href='https://www.mapbox.com/about/maps/' " +
+	    "target='_blank'>&copy; Mapbox &copy; " +
+	    "OpenStreetMap</a> <a class='mapbox-improve-map' " +
+	    "href='https://www.mapbox.com/map-feedback/' " +
+	    "target='_blank'>Improve this map</a>'"
+
     // create a map in the "map" div, set the view to a given place and zoom
     var map = L.map(div_name, {
-			attributionControl: false,
+			attributionControl: true,
 		    } );
     // fit within the boundaries of the 48 US states
     // http://en.wikipedia.org/wiki/Extreme_points_of_the_United_States
@@ -23,10 +32,12 @@ function show_continental_US_map(div_name){
     markerGroup.addTo(map);
 
     var tile_layer = L.tileLayer(
-	'http://{s}.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png',
+	'http://{s}.tiles.mapbox.com/v4/solidarityeconomy.d591ea8d' +
+	'/{z}/{x}/{y}.png?access_token={accessToken}',
 	{
-	    subdomains: ['otile1','otile2','otile3','otile4'],
 	    maxZoom: 18, // is this needed?
+	    attribution: atrib,
+	    accessToken: mapbox_accessToken
 	}
     );
     tile_layer.addTo(map);

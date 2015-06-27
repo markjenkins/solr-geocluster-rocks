@@ -110,7 +110,11 @@ function show_continental_US_map(div_name){
 				  },
 			       	  onEachFeature: function(feature, layer){
 				      layer.bindPopup(
-					  feature.properties.popupContent);
+					  '<a href="/organizations/' +
+					  feature.properties.org_id +
+					  '/">' +
+					  feature.properties.popupContent +
+					  '</a>' );
 				  }
 			      }
 			  );

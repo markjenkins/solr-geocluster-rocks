@@ -20,6 +20,20 @@ function show_continental_US_map(div_name){
 	'<a href="http://leafletjs.com" '
 	+ 'title="A JS library for interactive maps">Leaflet</a>');
 
+    var logo_control = L.Control.extend({
+        options: { position: 'bottomleft' },
+        onAdd: function (map) {
+        var container = L.DomUtil.create('div');
+        container.innerHTML =
+		'<a href="http://mapbox.com/" class="mapbox-logo" ' +
+		'target="_blank">MapBox</a>';
+    
+        return container;
+        }
+    });
+
+    map.addControl( new logo_control() );
+
     // fit within the boundaries of the 48 US states
     // http://en.wikipedia.org/wiki/Extreme_points_of_the_United_States
     // Southern point used is Western Dry Rocks, Florida

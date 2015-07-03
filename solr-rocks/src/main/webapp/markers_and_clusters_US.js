@@ -15,13 +15,14 @@ function show_continental_US_map(div_name){
     // create a map in the "map" div, set the view to a given place and zoom
     var map = L.map(div_name, {
 			attributionControl: true,
+			zoomControl: false
 		    } );
     map.attributionControl.setPrefix(
 	'<a href="http://leafletjs.com" '
 	+ 'title="A JS library for interactive maps">Leaflet</a>');
 
     var logo_control = L.Control.extend({
-        options: { position: 'bottomleft' },
+        options: { position: 'bottomright' },
         onAdd: function (map) {
         var container = L.DomUtil.create('div');
         container.innerHTML =
@@ -33,6 +34,8 @@ function show_continental_US_map(div_name){
     });
 
     map.addControl( new logo_control() );
+
+    L.control.zoom({position: 'topright'}).addTo(map);
 
     // fit within the boundaries of the 48 US states
     // http://en.wikipedia.org/wiki/Extreme_points_of_the_United_States

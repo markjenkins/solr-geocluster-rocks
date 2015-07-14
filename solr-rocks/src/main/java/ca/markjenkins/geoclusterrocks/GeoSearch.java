@@ -7,6 +7,8 @@ import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.request.handler.TextRequestHandler;
 import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.cycle.RequestCycle;
+import org.apache.wicket.request.IRequestParameters;
+import org.apache.wicket.util.string.StringValue;
 
 import org.geojson.FeatureCollection;
 import org.geojson.Feature;
@@ -130,7 +132,9 @@ public class GeoSearch extends WebPage {
     }
 
     public static QueryResponse query_locations_in_solr
-	(String bounds, int zoom, boolean stats_enabled, int group_threshold){
+	(String bounds, int zoom,
+	 String[] types_to_exclude,
+	 boolean stats_enabled, int group_threshold){
 	QueryResponse rsp = null;
 	SolrQuery params = new SolrQuery();
 	String bot_left_long;
@@ -138,12 +142,13 @@ public class GeoSearch extends WebPage {
 	String top_right_long;
 	String top_right_lat;
 
+	String query_string;
 	if (bounds == null){
 	    bot_left_long = "-180";
 	    bot_left_lat = "-90";
 	    top_right_long = "180";
 	    top_right_lat = "90";
-	    params.setQuery("*:*");
+	    query_string = "*:*";
 	}
 	else {
 	    String[] queryBounds = bounds.split(",");
@@ -152,13 +157,21 @@ public class GeoSearch extends WebPage {
 	    top_right_long = restrictLongitude(queryBounds[2]);
 	    top_right_lat = restrictLatitude(queryBounds[3]);
 
-	    params.setQuery("location:[" +
+	    query_string = "location:[" +
 			    bot_left_lat + "," +
 			    bot_left_long +
 			    " TO " + 
 			    top_right_lat + "," +
-			    top_right_long + "]");
+			    top_right_long + "]";
 	}
+	if ( null != types_to_exclude && types_to_exclude.length >= 1 ){
+	    for (String exclude_type: types_to_exclude){
+		query_string = query_string + 
+		    " AND -type_name:\"" + exclude_type + "\"";
+	    }
+	}
+	
+	params.setQuery(query_string);
 
 	int hash_len = Clustering.geohash_lengths_for_zooms[zoom];
 	String hash_len_geohash_field = "geohash_" + hash_len;
@@ -288,10 +301,27 @@ public class GeoSearch extends WebPage {
 	boolean stats_enabled =
 	    stats == null || stats.equals("null") || stats.equals("true");
 
+	String[] types_to_ignore = null;
+	IRequestParameters request_params =
+	    cy.getRequest().getQueryParameters();
+	if (null != request_params.getParameterValues("ignore_types")){
+	    int num_types_to_ignore =
+		request_params.getParameterValues("ignore_types").size();
+	    types_to_ignore = new String[num_types_to_ignore];
+
+	    int i =0;
+	    for (StringValue type_to_ignore:
+		     request_params.getParameterValues("ignore_types")){
+		types_to_ignore[i] = type_to_ignore.toString();
+		i++;
+	    }
+	}
+
 	QueryResponse rsp = query_locations_in_solr(
 	    cy.getRequest().getQueryParameters().getParameterValue("bounds")
 	    .toString(),
 	    zoom,
+	    types_to_ignore,
             stats_enabled,
 	    max_group_size);
 

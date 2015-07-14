@@ -37,6 +37,16 @@ function show_continental_US_map(div_name){
 
     L.control.zoom({position: 'topright'}).addTo(map);
 
+    var cu_control = L.control({position: 'topright'});
+    cu_control.onAdd = function (map) {
+        var div = L.DomUtil.create('div');
+        div.innerHTML =
+	    '<form><input id="cu_control" type="checkbox" checked/>' + 
+	    'Include credit unions</form>';
+	return div;
+    };
+    cu_control.addTo(map);
+
     // fit within the boundaries of the 48 US states
     // http://en.wikipedia.org/wiki/Extreme_points_of_the_United_States
     // Southern point used is Western Dry Rocks, Florida
@@ -103,8 +113,15 @@ function show_continental_US_map(div_name){
 
 
     function display_map(){
+        var type_exclusion_queries = '';
+	if ( ! document.getElementById("cu_control").checked ){
+            type_exclusion_queries = '&ignore_types=Credit Unions';
+	}
+
 	jQuery.getJSON("geosearch?bounds=" +
-		  map.getBounds().toBBoxString() + "&zoom=" + map.getZoom(),
+		  map.getBounds().toBBoxString() +
+		  "&zoom=" + map.getZoom() +
+		  type_exclusion_queries,
 		  function(data, status, jqXHR){
 		      var geojson_layer = L.geoJson(
 			  false,
@@ -157,7 +174,13 @@ function show_continental_US_map(div_name){
 	display_map();
     }
 
+    function handle_cu_control_change(){
+	display_map();
+    }
+
     map.on('moveend', handle_map_move_end);
+    document.getElementById("cu_control").addEventListener(
+	"click", handle_cu_control_change, false);
     display_map();
 }
 

@@ -48,6 +48,7 @@ public class GeoSearch extends WebPage {
     static final String POPUP_CONTENT_FEATURE_PROPERTY = "popupContent";
     static final String CLUSTER_COUNT_FEATURE_PROPERTY = "clusterCount";
     static final String ORG_ID_FEATURE_PROPERTY = "org_id";
+    static final String ICON_GROUP_FEATURE_PROPERTY = "icon_group_id";
 
     static final int GROUP_SIZE_MAX_ZOOM = 80;
 

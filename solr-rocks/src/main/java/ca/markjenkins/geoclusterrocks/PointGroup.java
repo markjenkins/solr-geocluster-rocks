@@ -38,6 +38,11 @@ public class PointGroup {
 			      (String) doc.getFirstValue("name") );
 		f.setProperty(GeoSearch.ORG_ID_FEATURE_PROPERTY,
 			      (String) doc.getFirstValue("org_id") );
+		if ( null != doc.getFirstValue("icon_group_id") ){
+			f.setProperty
+			    (GeoSearch.ICON_GROUP_FEATURE_PROPERTY,
+			     (String) doc.getFirstValue("icon_group_id") );
+		}
 		String location = (String)doc.getFirstValue("location");
 		String[] location_parts = location.split(", ");
 		Point p = new Point(

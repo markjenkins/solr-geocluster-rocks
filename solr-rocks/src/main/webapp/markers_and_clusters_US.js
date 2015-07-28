@@ -4,6 +4,15 @@
 
 mapbox_accessToken = 'pk.eyJ1Ijoic29saWRhcml0eWVjb25vbXkiLCJhIjoiMTExNWFkZDMyNTJhYWJiMGMwYzEzMzAyNTMyNWI4YjgifQ.p5zIXgZV-CaHRksQ_MiMPw'
 
+var ICONS = [
+    "finance-small.png",
+    "food-small.png",
+    "goods-small.png",
+    "governance-small.png",
+    "housing-small.png",
+    "learn-small.png"
+]
+
 function show_continental_US_map(div_name){
     var atrib = 
 	"<a href='https://www.mapbox.com/about/maps/' " +
@@ -82,6 +91,14 @@ function show_continental_US_map(div_name){
 		return L.marker(latlng,
 				{icon: cluster_icon_create(
 				     feature.properties.clusterCount) });
+	    }
+	    else if (feature.properties.icon_group_id){
+		return L.marker(
+		    latlng,
+		    {icon: L.icon( {iconUrl: '/images/nsfus_solidarity/' +
+				    ICONS[feature.properties.icon_group_id]
+				   })
+		    } );
 	    }
 	    else {
 		return L.marker(latlng);

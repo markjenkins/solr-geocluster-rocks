@@ -10,7 +10,8 @@ var ICONS = [
     "goods-small.png",
     "governance-small.png",
     "housing-small.png",
-    "learn-small.png"
+    "learn-small.png",
+    "education-small.png"
 ]
 
 function show_continental_US_map(div_name){

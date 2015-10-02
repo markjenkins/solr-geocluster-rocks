@@ -14,6 +14,15 @@ var ICONS = [
     "education-small.png"
 ]
 
+function icon_group_marker_for_feature(feature, latlng){
+    return L.marker(
+	latlng,
+	{icon: L.icon( {iconUrl: '/images/nsfus_solidarity/' +
+			ICONS[feature.properties.icon_group_id]
+		       })
+	} );
+}
+
 function show_continental_US_map(div_name){
     var atrib = 
 	"<a href='https://www.mapbox.com/about/maps/' " +
@@ -94,12 +103,7 @@ function show_continental_US_map(div_name){
 				     feature.properties.clusterCount) });
 	    }
 	    else if (feature.properties.icon_group_id){
-		return L.marker(
-		    latlng,
-		    {icon: L.icon( {iconUrl: '/images/nsfus_solidarity/' +
-				    ICONS[feature.properties.icon_group_id]
-				   })
-		    } );
+		return icon_group_marker_for_feature(feature, latlng);
 	    }
 	    else {
 		return L.marker(latlng);
@@ -156,12 +160,7 @@ function show_continental_US_map(div_name){
 			  var spidergeojson_layer = L.geoJson(
 			      false, {
 				  pointToLayer: function(feature, latlng){
-				      new_marker = L.marker(
-					  latlng,
-					  {icon: L.icon(
-					      {iconUrl:'/images/spider_marker.png'} )
-					   }
-					  );
+				      new_marker = icon_group_marker_for_feature(feature, latlng);
 				      oms.addMarker(new_marker);
 				      return new_marker;
 				  },

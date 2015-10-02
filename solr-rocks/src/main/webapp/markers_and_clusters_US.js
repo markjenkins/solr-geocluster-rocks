@@ -10,8 +10,8 @@ var ICONS = [
     "goods-small.png",
     "governance-small.png",
     "housing-small.png",
-    "learn-small.png",
-    "education-small.png"
+    "education-small.png",
+    "collectives-small.png"
 ]
 
 function icon_group_marker_for_feature(feature, latlng){

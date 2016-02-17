@@ -27,6 +27,10 @@
    <field name="org_id" type="string_stored_indexed" />
    <field name="name" type="string_stored_indexed" />
    <field name="type_name" type="string_stored_indexed" />
+   <field name="state_two_letter" type="string_stored_indexed" />
+   <field name="city" type="string_stored_indexed" />
+   <field name="zip" type="string_stored_indexed" />
+   <field name="country" type="string_stored_indexed" />
    <field name="icon_group_id" type="string_stored_indexed" />
    <field name="latitude" type="coord_tdouble" />
    <field name="longitude" type="coord_tdouble" />

@@ -25,6 +25,8 @@ import org.apache.solr.client.solrj.impl.HttpSolrServer;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrQuery.SortClause;
+import org.apache.solr.client.solrj.util.ClientUtils;
+
 
 import org.apache.solr.common.util.NamedList;
 import org.apache.solr.common.SolrDocumentList;
@@ -40,6 +42,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.Iterator;
 import java.util.ArrayList;
@@ -89,6 +92,9 @@ public class GeoSearch extends WebPage {
     // (our inspiration) has a limit of 1,000,000 ...
     static final int NUM_ROWS_ALLOWED = 300000;
 
+    static final String[] MATCH_FIELDS = {
+	"type_name", "state_two_letter", "city", "zip", "country"};
+
     static final SolrServer solr;
     static {
 	solr = new HttpSolrServer( "http://localhost:8080/solr" );
@@ -135,7 +141,9 @@ public class GeoSearch extends WebPage {
     public static QueryResponse query_locations_in_solr
 	(String bounds, int zoom,
 	 String[] types_to_exclude,
-	 boolean stats_enabled, int group_threshold){
+	 boolean stats_enabled, int group_threshold,
+	 Map<String, List<String>> match_criteria
+	 ){
 	QueryResponse rsp = null;
 	SolrQuery params = new SolrQuery();
 	String bot_left_long;
@@ -171,7 +179,30 @@ public class GeoSearch extends WebPage {
 		    " AND -type_name:\"" + exclude_type + "\"";
 	    }
 	}
-	
+
+	// this is going to need to be designed to co-operative with the
+	// type filters above
+	for (Map.Entry<String, List<String>> entry: match_criteria.entrySet()){
+	    String sub_query = null;
+	    String field_name = entry.getKey();
+	    for (String criteria: entry.getValue()){
+		if (null == sub_query){
+		    sub_query = "+" + field_name + ":(";
+		}
+		else{
+		    sub_query = sub_query + " ";
+		}
+		sub_query = sub_query + "\"" +
+		    ClientUtils.escapeQueryChars(criteria) + "\"";
+	    }
+	    if (sub_query != null ){
+		sub_query = sub_query + ")";
+
+		query_string = query_string + " AND " + sub_query;
+	    }
+
+	}
+
 	params.setQuery(query_string);
 
 	int hash_len = Clustering.geohash_lengths_for_zooms[zoom];
@@ -318,13 +349,28 @@ public class GeoSearch extends WebPage {
 	    }
 	}
 
+	HashMap<String, List<String>> match_criteria =
+	    new HashMap<String, List<String>>();
+
+	for (String field_name: MATCH_FIELDS){
+	    List<String> matches = new ArrayList<String>();
+		if (null != request_params.getParameterValues(field_name)){
+		    for(StringValue match_val:
+			    request_params.getParameterValues(field_name)){
+			matches.add( match_val.toString() );
+		    }
+		}
+		match_criteria.put( field_name, matches );
+	}
+
 	QueryResponse rsp = query_locations_in_solr(
 	    cy.getRequest().getQueryParameters().getParameterValue("bounds")
 	    .toString(),
 	    zoom,
 	    types_to_ignore,
             stats_enabled,
-	    max_group_size);
+	    max_group_size,
+	    match_criteria);
 
 	if (rsp == null){
 	    cy.scheduleRequestHandlerAfterCurrent

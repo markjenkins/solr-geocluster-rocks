@@ -142,7 +142,8 @@ public class GeoSearch extends WebPage {
 	(String bounds, int zoom,
 	 String[] types_to_exclude,
 	 boolean stats_enabled, int group_threshold,
-	 Map<String, List<String>> match_criteria
+	 Map<String, List<String>> match_criteria,
+	 List<String> search_text_words
 	 ){
 	QueryResponse rsp = null;
 	SolrQuery params = new SolrQuery();
@@ -201,6 +202,21 @@ public class GeoSearch extends WebPage {
 		query_string = query_string + " AND " + sub_query;
 	    }
 
+	}
+
+	if (search_text_words.size() > 0){
+	    query_string = query_string + " AND (";
+	    String or_string = "";
+	    boolean or_string_set = false;
+	    for(String search_text : search_text_words){
+		query_string = query_string + or_string +
+		    " text:\"" + search_text + "\"";
+		if (!or_string_set){
+		    or_string = " OR ";
+		    or_string_set = true;
+		}
+	    }
+	    query_string = query_string + ")";
 	}
 
 	params.setQuery(query_string);
@@ -363,6 +379,17 @@ public class GeoSearch extends WebPage {
 		match_criteria.put( field_name, matches );
 	}
 
+	List<String> text_searches = new ArrayList<String>();
+	
+	if (request_params.getParameterValue("search_text") != null ){
+	    String search_text =
+		request_params.getParameterValue("search_text").toString();
+	    if (search_text != null )
+		for (String search_text_word : search_text.split(" ")){
+		    text_searches.add(search_text_word);
+		}
+	}
+
 	QueryResponse rsp = query_locations_in_solr(
 	    cy.getRequest().getQueryParameters().getParameterValue("bounds")
 	    .toString(),
@@ -370,7 +397,8 @@ public class GeoSearch extends WebPage {
 	    types_to_ignore,
             stats_enabled,
 	    max_group_size,
-	    match_criteria);
+	    match_criteria,
+	    text_searches);
 
 	if (rsp == null){
 	    cy.scheduleRequestHandlerAfterCurrent

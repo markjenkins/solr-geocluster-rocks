@@ -2,6 +2,16 @@
 
 <schema name="geoclusterschema" version="1.5">
   <types>
+    <fieldtype name="text" class="solr.TextField">
+      <analyzer>
+        <tokenizer class="solr.StandardTokenizerFactory"/>
+        <filter class="solr.StandardFilterFactory"/>
+        <filter class="solr.LowerCaseFilterFactory"/>
+        <filter class="solr.StopFilterFactory"/>
+        <filter class="solr.PorterStemFilterFactory"/>
+      </analyzer>
+    </fieldtype>
+
     <fieldType name="string_primary" class="solr.StrField"
 	       indexed="true" stored="true" multiValued="false"
 	       required="true"/>
@@ -47,9 +57,16 @@
    <field name="geohash_10" type="geohash_string" />
    <field name="geohash_11" type="geohash_string" />
    <field name="geohash_12" type="geohash_string" />
+   <field name="text" type="text" indexed="true" stored="false" multiValued="true" />
  </fields>
 
  <uniqueKey>id</uniqueKey>
 
+ <copyField source="name" dest="text"/>
+ <copyField source="type_name" dest="text"/>
+ <copyField source="state_two_letter" dest="text"/>
+ <copyField source="city" dest="text"/>
+ <copyField source="zip" dest="text"/>
+ <copyField source="country" dest="text"/>
 
 </schema>

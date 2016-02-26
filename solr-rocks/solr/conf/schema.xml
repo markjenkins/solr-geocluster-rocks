@@ -17,6 +17,8 @@
 	       required="true"/>
     <fieldType name="string_stored_indexed" class="solr.StrField"
 	       indexed="true" stored="true" multiValued="false" />
+    <fieldType name="string_stored_indexed_multi" class="solr.StrField"
+	       indexed="true" stored="true" multiValued="true" />
     <fieldType name="coord_tdouble" class="solr.TrieDoubleField"
 	       indexed="true" stored="false" multiValued="false"
 	       precisionStep="8" omitNorms="true" positionIncrementGap="0"/>
@@ -36,7 +38,7 @@
    <field name="id" type="string_primary" />
    <field name="org_id" type="string_stored_indexed" />
    <field name="name" type="string_stored_indexed" />
-   <field name="type_name" type="string_stored_indexed" />
+   <field name="type_name" type="string_stored_indexed_multi" />
    <field name="state_two_letter" type="string_stored_indexed" />
    <field name="city" type="string_stored_indexed" />
    <field name="zip" type="string_stored_indexed" />

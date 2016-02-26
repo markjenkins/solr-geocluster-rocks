@@ -143,7 +143,8 @@ public class GeoSearch extends WebPage {
 	 String[] types_to_exclude,
 	 boolean stats_enabled, int group_threshold,
 	 Map<String, List<String>> match_criteria,
-	 List<String> search_text_words
+	 List<String> search_text_words,
+	 String require_type
 	 ){
 	QueryResponse rsp = null;
 	SolrQuery params = new SolrQuery();
@@ -179,6 +180,11 @@ public class GeoSearch extends WebPage {
 		query_string = query_string + 
 		    " AND -type_name:\"" + exclude_type + "\"";
 	    }
+	}
+
+	if ( null != require_type ){
+	    query_string = query_string +
+		" AND +type_name:\"" + require_type + "\"";
 	}
 
 	// this is going to need to be designed to co-operative with the
@@ -390,6 +396,12 @@ public class GeoSearch extends WebPage {
 		}
 	}
 
+	String require_type = null;
+	if ( null != request_params.getParameterValue("require_org_type") )
+	    require_type = 
+		request_params.getParameterValue("require_org_type").
+		toString();
+
 	QueryResponse rsp = query_locations_in_solr(
 	    cy.getRequest().getQueryParameters().getParameterValue("bounds")
 	    .toString(),
@@ -398,7 +410,8 @@ public class GeoSearch extends WebPage {
             stats_enabled,
 	    max_group_size,
 	    match_criteria,
-	    text_searches);
+	    text_searches,
+	    require_type);
 
 	if (rsp == null){
 	    cy.scheduleRequestHandlerAfterCurrent

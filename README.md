@@ -1,35 +1,7 @@
-A demonstration of how to use Apache Solr for geoclustering. No actually clustering demonstrated yet.
+Use of Apache Solr to provide server side map marker clustering for StoneSoup (https://github.com/datacommons/stonesoup) as used in production by http://solidarityeconomy.us (StoneSoup nsf_us_solidarity_standalone branch).
 
-Currently this is just a basic maven project that uses Jetty to start a web server with Wicket and Solr, with a basic schema for place names and locations. Outline structure for how to do all this maven/Jetty/Solr stuff taken from https://github.com/ryantxu/spatial-solr-sandbox
+Exists as a seperate repository with the idea that the relevant Apache Solr java code could be useful to other sites that want clustering on the server side. Eventually the idea is to have the StoneSoup specific version in the stonesoup branch and the generic version in the master branch, but for now up to date code is only found in the (default) stonesoup branch.
 
-    $ cd solr-rocks
-    $ mvn jetty:run
-From a seperate shell
-
-    $ cd solr-rocks/data
-    $ curl http://localhost:8080/solr/update  -H 'Content-type:application/xml' \
-    --data-binary @US_2000_entries.xml
-    $ curl 'http://localhost:8080/solr/update?softCommit=true'
-
-For a larger data set
-
-    $ curl -o US.zip http://download.geonames.org/export/dump/US.zip
-    # Note, this uncompresses to 250 megabytes!
-    $ unzip US.zip
-    # And this creates a file that is 1.4GB
-    $ python to_xml.py > US.xml
-    $ curl http://localhost:8080/solr/update  -H 'Content-type:application/xml' \
-    --data-binary @US.xml
-    $ curl 'http://localhost:8080/solr/update?softCommit=true'
-
-or  make own smaller data set:
-
-    $ python to_xml.py 5000 > US_5000_entries.xml
-    $ curl http://localhost:8080/solr/update  -H 'Content-type:application/xml' \
-    --data-binary @US_5000_entries.xml
-    $ curl 'http://localhost:8080/solr/update?softCommit=true'
-
-Make your queries to /solr/ as per solr docs
-
-The to_xml.py program requires http://code.google.com/p/python-geohash/
-Tested with r239 from the subversion repository
+Considerable inspiration taken from
+https://www.drupal.org/project/geocluster
+http://dasjo.at/thesis

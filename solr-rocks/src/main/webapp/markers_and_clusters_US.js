@@ -64,7 +64,7 @@ function show_continental_US_map(div_name){
 	    'Include credit unions</form>';
 	return div;
     };
-    //cu_control.addTo(map);
+    cu_control.addTo(map);
 
     // fit within the boundaries of the 48 US states
     // http://en.wikipedia.org/wiki/Extreme_points_of_the_United_States
@@ -136,9 +136,9 @@ function show_continental_US_map(div_name){
 
     function display_map(){
         var type_exclusion_queries = '';
-	//if ( ! document.getElementById("cu_control").checked ){
-        //    type_exclusion_queries = '&ignore_types=Credit Unions';
-	//}
+	if ( ! document.getElementById("cu_control").checked ){
+            type_exclusion_queries = '&ignore_icon_types=0';
+	}
 
 	jQuery.getJSON("geosearch?bounds=" +
 		  map.getBounds().toBBoxString() +
@@ -196,8 +196,8 @@ function show_continental_US_map(div_name){
     }
 
     map.on('moveend', handle_map_move_end);
-    //document.getElementById("cu_control").addEventListener(
-    //"click", handle_cu_control_change, false);
+    document.getElementById("cu_control").addEventListener(
+    "click", handle_cu_control_change, false);
     display_map();
 }
 

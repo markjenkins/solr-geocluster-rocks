@@ -141,6 +141,7 @@ public class GeoSearch extends WebPage {
     public static QueryResponse query_locations_in_solr
 	(String bounds, int zoom,
 	 String[] types_to_exclude,
+	 int[] icon_types_to_ignore,
 	 boolean stats_enabled, int group_threshold,
 	 Map<String, List<String>> match_criteria,
 	 List<String> search_text_words,
@@ -175,6 +176,12 @@ public class GeoSearch extends WebPage {
 			    top_right_lat + "," +
 			    top_right_long + "]";
 	}
+
+	// type_name is multivalued, so trying to search against one type
+	// isn't going to work until we index type_name correctely
+	// comment out until we figure that out or how to do a multi-value
+	// query correctly
+	/*
 	if ( null != types_to_exclude && types_to_exclude.length >= 1 ){
 	    for (String exclude_type: types_to_exclude){
 		query_string = query_string + 
@@ -185,6 +192,15 @@ public class GeoSearch extends WebPage {
 	if ( null != require_type ){
 	    query_string = query_string +
 		" AND +type_name:\"" + require_type + "\"";
+	}
+	*/
+
+	if ( null != icon_types_to_ignore &&
+	     icon_types_to_ignore.length >= 1){
+	    for (int exclude_icon_type: icon_types_to_ignore){
+		query_string = query_string +
+		    " AND -icon_group_id:\"" + exclude_icon_type + "\"";
+	    }
 	}
 
 	// this is going to need to be designed to co-operative with the
@@ -356,6 +372,8 @@ public class GeoSearch extends WebPage {
 	    stats == null || stats.equals("null") || stats.equals("true");
 
 	String[] types_to_ignore = null;
+	int[] icon_types_to_ignore = null;
+
 	IRequestParameters request_params =
 	    cy.getRequest().getQueryParameters();
 	if (null != request_params.getParameterValues("ignore_types")){
@@ -370,6 +388,19 @@ public class GeoSearch extends WebPage {
 		i++;
 	    }
 	}
+	if (null != request_params.getParameterValues("ignore_icon_types")){
+	    int num_icon_types_to_ignore =
+		request_params.getParameterValues("ignore_icon_types").size();
+	    icon_types_to_ignore = new int[num_icon_types_to_ignore];
+
+	    int i = 0;
+	    for (StringValue icon_type_to_ignore:
+		     request_params.getParameterValues("ignore_icon_types")){
+		icon_types_to_ignore[i] = icon_type_to_ignore.toInt();
+		i++;
+	    }
+	}
+
 
 	HashMap<String, List<String>> match_criteria =
 	    new HashMap<String, List<String>>();
@@ -407,6 +438,7 @@ public class GeoSearch extends WebPage {
 	    .toString(),
 	    zoom,
 	    types_to_ignore,
+	    icon_types_to_ignore,
             stats_enabled,
 	    max_group_size,
 	    match_criteria,

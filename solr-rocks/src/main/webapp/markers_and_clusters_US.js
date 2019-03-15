@@ -61,7 +61,7 @@ function show_continental_US_map(div_name){
         var div = L.DomUtil.create('div');
         div.innerHTML =
 	    '<form><input id="cu_control" type="checkbox" checked/>' + 
-	    'Include credit unions</form>';
+	    'Exclude credit unions</form>';
 	return div;
     };
     cu_control.addTo(map);
@@ -136,7 +136,7 @@ function show_continental_US_map(div_name){
 
     function display_map(){
         var type_exclusion_queries = '';
-	if ( ! document.getElementById("cu_control").checked ){
+	if ( document.getElementById("cu_control").checked ){
             type_exclusion_queries = '&ignore_icon_types=0';
 	}
 

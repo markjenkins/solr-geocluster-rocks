@@ -11,6 +11,7 @@ import org.geojson.Point;
 import org.geojson.LngLatAlt;
 
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -39,20 +40,26 @@ public class Clustering {
     public static final int GEOCLUSTER_DEFAULT_DISTANCE = 65;
 
     public static final double[] resolutions;
-    public static final int[] geohash_lengths_for_zooms;
+    private static final int[] default_geohash_lengths_for_zooms;
+    public static Map<Integer, int[]> geohash_lengths_for_zooms_per_threshold;
     // as the following illustrates, a "final" array isn't so final...
     // in some situations this can be a security problem
     static {
 	resolutions = new double[ZOOMS];
-	geohash_lengths_for_zooms = new int[ZOOMS];
 	for( int zoom=0; zoom < ZOOMS; zoom++ ){
 	    // when zoom is 0, 2 to the power of 0 = 1,
 	    // and this is MAX_RESOLUTION
 	    resolutions[zoom] = MAX_RESOLUTION / Math.pow(2, zoom);
-	    geohash_lengths_for_zooms[zoom] =
-		lengthFromDistance(resolutions[zoom],
-				   GEOCLUSTER_DEFAULT_DISTANCE);
 	}
+	default_geohash_lengths_for_zooms = new int[ZOOMS];
+	precompute_geohash_lengths
+	    (default_geohash_lengths_for_zooms,
+	     GEOCLUSTER_DEFAULT_DISTANCE);
+	geohash_lengths_for_zooms_per_threshold =
+	    new HashMap<Integer, int[]>();
+	geohash_lengths_for_zooms_per_threshold
+	    .put(GEOCLUSTER_DEFAULT_DISTANCE,
+		 default_geohash_lengths_for_zooms);
     }
 
     public static final double RAD_TO_DEGREES = 180 / Math.PI;
@@ -81,6 +88,25 @@ https://github.com/openlayers/openlayers/blob/master/lib/OpenLayers/Projection.j
 	     ) * RAD_TO_DEGREES;
 	return result;
     }
+
+    /**
+     * Calculate once the geohash lengths for a particular
+     * distance threshold at all possible zoom levels (ZOOMS)
+     *
+     * The caller is assumed to be caching this so this need not be
+     * calculated again
+     */
+    public static void precompute_geohash_lengths
+	(int geohash_lengths_target[], int distance_threshold){
+	double distance_threshold_double = distance_threshold;
+	for( int zoom=0; zoom < ZOOMS; zoom++ ){
+	    geohash_lengths_target[zoom] =
+		lengthFromDistance(resolutions[zoom],
+				   distance_threshold_double);
+	}
+    }
+								     
+
     /**
      * Calculate geohash length for clustering by a specified distance
      * in pixels. This is based on lengthFromDistance() from 

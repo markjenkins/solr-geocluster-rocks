@@ -167,7 +167,7 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeoclusterHelper.inc
     }
 
     public static boolean shouldCluster(Point a, Point b, double resolution,
-					double distance_threshold) {
+                                        double distance_threshold) {
 	// Calculate distance.
 	return distance_pixels(a, b, resolution) <= distance_threshold;
     }

@@ -36,6 +36,8 @@ public class Clustering {
     public static final double MAX_RESOLUTION =
 	Math.PI * EARTH_DIAMETER * METERS_PER_KM / PIXELS_PER_TILE;
 
+    public static final int GEOCLUSTER_DEFAULT_DISTANCE = 65;
+
     public static final double[] resolutions;
     public static final int[] geohash_lengths_for_zooms;
     // as the following illustrates, a "final" array isn't so final...
@@ -48,11 +50,10 @@ public class Clustering {
 	    // and this is MAX_RESOLUTION
 	    resolutions[zoom] = MAX_RESOLUTION / Math.pow(2, zoom);
 	    geohash_lengths_for_zooms[zoom] =
-		lengthFromDistance(resolutions[zoom]);
+		lengthFromDistance(resolutions[zoom],
+				   GEOCLUSTER_DEFAULT_DISTANCE);
 	}
     }
-
-    public static final int GEOCLUSTER_DEFAULT_DISTANCE = 65;
 
     public static final double RAD_TO_DEGREES = 180 / Math.PI;
     public static final int EARTH_AREA = 6378137;
@@ -85,10 +86,10 @@ https://github.com/openlayers/openlayers/blob/master/lib/OpenLayers/Projection.j
      * in pixels. This is based on lengthFromDistance() from 
 http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
      */
-    public static int lengthFromDistance(double resolution) {
+    public static int lengthFromDistance(double resolution,
+                                         double distance_threshhold) {
 	// this is the number of meters we'd like to keep our markers apart
-	double cluster_distance_meters =
-	    GEOCLUSTER_DEFAULT_DISTANCE * resolution;
+	double cluster_distance_meters = distance_threshhold * resolution;
 	double x = cluster_distance_meters;
 	double y = cluster_distance_meters;
 	double[] width_height = backwardMercator(x, y);

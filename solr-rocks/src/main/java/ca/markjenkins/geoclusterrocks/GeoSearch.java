@@ -243,9 +243,8 @@ public class GeoSearch extends WebPage {
 
 	params.setQuery(query_string);
 
-	int hash_len =
-	    Clustering.geohash_lengths_for_zooms_per_threshold
-	    .get(Clustering.GEOCLUSTER_DEFAULT_DISTANCE)[zoom];
+	int hash_len = Clustering.get_geohash_lengths_for_distance_threshold
+	    (Clustering.GEOCLUSTER_DEFAULT_DISTANCE)[zoom];
 	String hash_len_geohash_field = "geohash_" + hash_len;
 
 	if (SOLR_RESPONSIBLE_SORT)

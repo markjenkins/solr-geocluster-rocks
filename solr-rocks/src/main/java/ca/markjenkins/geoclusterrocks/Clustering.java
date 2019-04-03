@@ -38,6 +38,20 @@ public class Clustering {
 	Math.PI * EARTH_DIAMETER * METERS_PER_KM / PIXELS_PER_TILE;
 
     public static final int GEOCLUSTER_DEFAULT_DISTANCE = 65;
+    // we have to be careful with these,
+    // in get_geohash_lengths_for_distance_threshold these prevent us from
+    // computing and caching a wide range of user requesting distance
+    // thresholds at 30 different zoom levels
+    // if GEOCLUSTER_DEFAULT_DISTANCE == 65 we get
+    // min==8, max=260, so that's 260-8+1=253 different tables each
+    // containing 30 ints (4 bytes each)
+    // so total memory 253*30*4 == 30360 bytes that the int arrays take up
+    // and the HashMap geohash_lengths_for_zooms_per_threshold
+    // is going to have 253 entries
+    private static final int MIN_DISTANCE_THRESHOLD =
+	GEOCLUSTER_DEFAULT_DISTANCE / 8;
+    private static final int MAX_DISTANCE_THRESHOLD =
+	GEOCLUSTER_DEFAULT_DISTANCE * 4;
 
     public static final double[] resolutions;
     private static final int[] default_geohash_lengths_for_zooms;
@@ -87,6 +101,36 @@ https://github.com/openlayers/openlayers/blob/master/lib/OpenLayers/Projection.j
 	     Math.atan(Math.exp(-y / EARTH_AREA))
 	     ) * RAD_TO_DEGREES;
 	return result;
+    }
+
+    /**
+     *
+     */
+    public static int[] get_geohash_lengths_for_distance_threshold
+        (int distance_threshold){
+	if (geohash_lengths_for_zooms_per_threshold
+	    .containsKey(distance_threshold)){
+	    return geohash_lengths_for_zooms_per_threshold
+		.get(distance_threshold);
+	}
+	// we have to restrict distance_threshold or else we're allowing
+	// users to increase our memory usage by adding entries to
+	// geohash_lengths_for_zooms_per_threshold
+	else if (distance_threshold > MAX_DISTANCE_THRESHOLD ||
+		 distance_threshold < MIN_DISTANCE_THRESHOLD ){
+	    // fixme, define an exception for this and handle better too
+	    throw new RuntimeException("allowable distance thresholds exceeded");
+	}
+	// else, we have to compute geohash_lengths_for_zooms for this
+	// threshold and saved for next time
+	else {
+	    int new_geohash_lengths_for_zoom[] = new int[ZOOMS];
+	    precompute_geohash_lengths(new_geohash_lengths_for_zoom,
+				       distance_threshold);
+	    geohash_lengths_for_zooms_per_threshold
+		.put(distance_threshold,new_geohash_lengths_for_zoom);
+	    return new_geohash_lengths_for_zoom;
+	}
     }
 
     /**

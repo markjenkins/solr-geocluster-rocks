@@ -139,10 +139,10 @@ http://cgit.drupalcode.org/geocluster/tree/includes/GeoclusterHelper.inc
 	return distance / resolution * pixel_correction(a_latitude);
     }
 
-    public static boolean shouldCluster(Point a, Point b, double resolution) {
+    public static boolean shouldCluster(Point a, Point b, double resolution,
+					double distance_threshold) {
 	// Calculate distance.
-	return distance_pixels(a, b, resolution)
-	    <= GEOCLUSTER_DEFAULT_DISTANCE;
+	return distance_pixels(a, b, resolution) <= distance_threshold;
     }
     /* Derived from
      * http://cgit.drupalcode.org/geocluster/tree/includes/GeohashHelper.inc
@@ -205,7 +205,8 @@ http://cgit.drupalcode.org/geocluster/tree/plugins/algorithm/GeohashGeoclusterAl
 		if (other_item != null){
 		    Point other_geometry = (Point) other_item.getGeometry();
 
-		    if (shouldCluster(geometry, other_geometry, resolution)) {
+		    if (shouldCluster(geometry, other_geometry, resolution,
+				      GEOCLUSTER_DEFAULT_DISTANCE)) {
 			assert( null != item.getGeometry() );
 			if (item.cluster_collection()){
 			    assert( null !=

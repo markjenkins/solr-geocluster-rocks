@@ -9,6 +9,7 @@ import org.apache.wicket.request.mapper.parameter.PageParameters;
 import org.apache.wicket.request.cycle.RequestCycle;
 import org.apache.wicket.request.IRequestParameters;
 import org.apache.wicket.util.string.StringValue;
+import org.apache.wicket.util.string.StringValueConversionException;
 
 import org.geojson.FeatureCollection;
 import org.geojson.Feature;
@@ -143,6 +144,7 @@ public class GeoSearch extends WebPage {
 	 String[] types_to_exclude,
 	 int[] icon_types_to_ignore,
 	 boolean stats_enabled, int group_threshold,
+	 int distance_threshold,
 	 Map<String, List<String>> match_criteria,
 	 List<String> search_text_words,
 	 String require_type
@@ -244,7 +246,7 @@ public class GeoSearch extends WebPage {
 	params.setQuery(query_string);
 
 	int hash_len = Clustering.get_geohash_lengths_for_distance_threshold
-	    (Clustering.GEOCLUSTER_DEFAULT_DISTANCE)[zoom];
+	    (distance_threshold)[zoom];
 	String hash_len_geohash_field = "geohash_" + hash_len;
 
 	if (SOLR_RESPONSIBLE_SORT)
@@ -434,6 +436,21 @@ public class GeoSearch extends WebPage {
 		request_params.getParameterValue("require_org_type").
 		toString();
 
+	int distance_threshold = Clustering.GEOCLUSTER_DEFAULT_DISTANCE;
+	if ( null != request_params.getParameterValue("distance_threshold") ){
+	    try {
+		distance_threshold =
+		    request_params.getParameterValue("distance_threshold").
+		    toInt();
+	    }
+	    catch (NumberFormatException nfe){
+		distance_threshold = Clustering.GEOCLUSTER_DEFAULT_DISTANCE;
+	    }
+	    catch (StringValueConversionException svce){
+		distance_threshold = Clustering.GEOCLUSTER_DEFAULT_DISTANCE;
+	    }
+	}
+
 	QueryResponse rsp = query_locations_in_solr(
 	    cy.getRequest().getQueryParameters().getParameterValue("bounds")
 	    .toString(),
@@ -442,6 +459,7 @@ public class GeoSearch extends WebPage {
 	    icon_types_to_ignore,
             stats_enabled,
 	    max_group_size,
+	    distance_threshold,
 	    match_criteria,
 	    text_searches,
 	    require_type);
